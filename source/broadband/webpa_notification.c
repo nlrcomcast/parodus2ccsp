@@ -622,7 +622,7 @@ static void getNotifyParamList(const char ***paramList, int *size)
     }
 #endif
     *size = count;
-	WalPrint("Notify param list size :%d\n", *size);
+	WalInfo("Notify param list size :%d\n", *size);
 	*paramList = notifyparameters;
 }
 
@@ -669,10 +669,10 @@ static void setInitialNotify()
 				backoffRetryTime = (int) pow(2, c) - 1;
 			}
 			
-			WalPrint("setInitialNotify backoffRetryTime calculated as %d seconds\n", backoffRetryTime);
+			WalInfo("setInitialNotify backoffRetryTime calculated as %d seconds\n", backoffRetryTime);
 
 			isError = 0;
-			WalPrint("notify List Size: %d\n", notifyListSize);
+			WalInfo("notify List Size: %d\n", notifyListSize);
 			attArr = (param_t *) malloc(sizeof(param_t));
 			for (i = 0; i < notifyListSize; i++)
 			{
@@ -683,7 +683,7 @@ static void setInitialNotify()
 					walStrncpy(attArr[0].value, notif, 20);
 					attArr[0].name = (char *) notifyparameters[i];
 					attArr[0].type = WDMP_INT;
-					WalPrint("notifyparameters[%d]: %s\n", i,notifyparameters[i]);
+					WalInfo("notifyparameters[%d]: %s\n", i,notifyparameters[i]);
 					setAttributes(attArr, 1, NULL, &ret);
 					if (ret != WDMP_SUCCESS)
 					{
@@ -729,7 +729,7 @@ static void setInitialNotify()
 
 		WAL_FREE(setInitialNotifStatus);
 
-		WalPrint("**********************End of setInitial Notify************************\n");
+		WalInfo("**********************End of setInitial Notify************************\n");
 	}
 	else
 	{
@@ -857,7 +857,7 @@ static void *notifyTask(void *status)
 	setInitialNotify();
 	handleNotificationEvents();
 	WAL_FREE(status);
-	WalPrint("notifyTask ended!\n");
+	WalInfo("notifyTask ended!\n");
 	return NULL;
 }
 

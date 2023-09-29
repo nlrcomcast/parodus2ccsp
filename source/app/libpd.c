@@ -176,10 +176,10 @@ static void parodus_receive()
                         getCurrentTime(startPtr);
 			headers_t *res_headers = NULL;
 			if(wrp_msg->u.req.headers != NULL) {
-				WalPrint("Allocating memory for response headers\n");
+				WalInfo("Allocating memory for response headers\n");
                         	res_headers = (headers_t *)malloc(sizeof(headers_t) + sizeof( char * ) * (wrp_msg->u.req.headers->count));
 				if(res_headers != NULL) {
-					WalPrint("Memory allocated successfully for response headers\n");
+					WalInfo("Memory allocated successfully for response headers\n");
 					memset(res_headers, 0, sizeof(headers_t));
 				}
 				else {
@@ -188,9 +188,11 @@ static void parodus_receive()
 				}	
 			}
 			else {
-                                WalPrint("Request headers field is empty so, Memory not allocated for response headers\n");
+                                WalInfo("Request headers field is empty so, Memory not allocated for response headers\n");
                         }
+			WalInfo("ReqPayload:%s\n",(char *)wrp_msg->u.req.payload);									
 			processRequest((char *)wrp_msg->u.req.payload, wrp_msg->u.req.transaction_uuid, ((char **)(&(res_wrp_msg->u.req.payload))), wrp_msg->u.req.headers, res_headers);
+			WalInfo("RespPayload:%s\n",(char *)res_wrp_msg->u.req.payload);
 			if(res_headers != NULL && res_headers->headers[0] != NULL && res_headers->headers[1] != NULL) {
                                 if(strlen(res_headers->headers[0]) > 0 && strlen(res_headers->headers[1]) > 0) {
                                           res_headers->count = wrp_msg->u.req.headers->count;
@@ -206,10 +208,12 @@ static void parodus_receive()
 		
                         if(res_wrp_msg->u.req.payload !=NULL)
                         {   
-                                WalPrint("Response payload is %s\n",(char *)(res_wrp_msg->u.req.payload));
+                                WalInfo("Response payload is %s\n",(char *)(res_wrp_msg->u.req.payload));
                                 res_wrp_msg->u.req.payload_size = strlen(res_wrp_msg->u.req.payload);
                         }
                         res_wrp_msg->msg_type = wrp_msg->msg_type;
+		    WalInfo("Req Dest is %s\n",(char *)(wrp_msg->u.req.dest ));		
+		    WalInfo("Req Source is %s\n",(char *)(wrp_msg->u.req.source ));							
 			if(wrp_msg->u.req.dest != NULL)
 			{
 				res_wrp_msg->u.req.source = strdup(wrp_msg->u.req.dest);
@@ -228,7 +232,7 @@ static void parodus_receive()
                             res_wrp_msg->u.req.content_type = contentType;
                         }
                         int sendStatus = libparodus_send(current_instance, res_wrp_msg);
-                        WalPrint("sendStatus is %d\n",sendStatus);
+                        WalInfo("sendStatus is %d\n",sendStatus);
                         if(sendStatus == 0)
                         {
                                 WalInfo("Sent message successfully to parodus\n");
@@ -260,7 +264,7 @@ static void parodus_receive()
 					{
 						//set this as global conn status. add lock before update it.
 						set_global_cloud_status(status);
-						WalPrint("set cloud-status value as %s\n", status);
+						WalInfo("set cloud-status value as %s\n", status);
 					}
 				}
 				wrp_free_struct (wrp_msg);

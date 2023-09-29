@@ -460,13 +460,13 @@ int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size
     int i=0, j=0, k=0, l=0, isWildcard = 0, matchFound = 0;
     int localCount = paramCount;
     char tmpchar[128] = { 0 };
-    WalPrint("*********** %s ***************\n",__FUNCTION__);
+    WalInfo("*********** %s ***************\n",__FUNCTION__);
 
     PCOSA_DATAMODEL_WEBPA       hWebpa    = (PCOSA_DATAMODEL_WEBPA)g_pCosaBEManager->hWebpa;
     PCOSA_DML_WEBPA             pWebpa    = (PCOSA_DML_WEBPA) hWebpa->pWebpa;
     PCOSA_DML_WEBPA_CONFIG      pWebpaCfg = (PCOSA_DML_WEBPA_CONFIG)pWebpa->pWebpaCfg;
 
-    WalPrint("paramCount = %d\n",paramCount);
+    WalInfo("paramCount = %d\n",paramCount);
     for(i=0; i<paramCount; i++)
     {
         if(parameterNames[i][strlen(parameterNames[i])-1] == '.')
@@ -508,7 +508,7 @@ int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size
                                 paramVal[k]->parameterName = strndup(PARAM_CID, MAX_PARAMETERNAME_LEN);
 				if((strlen(pWebpaCfg->X_COMCAST_COM_CID) == 0) || (strcmp(pWebpaCfg->X_COMCAST_COM_CID, "0") == 0))
 				{
-					WalPrint("CID is empty or 0, get value from DB\n");
+					WalInfo("CID is empty or 0, get value from DB\n");
 					CosaDmlWEBPA_GetValueFromDB( "X_COMCAST-COM_CID", pWebpaCfg->X_COMCAST_COM_CID );
 				}
                                 paramVal[k]->parameterValue = strndup(pWebpaCfg->X_COMCAST_COM_CID,MAX_PARAMETERVALUE_LEN);
@@ -554,7 +554,7 @@ int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size
                                 paramVal[k]->parameterName = strndup(PARAM_CID, MAX_PARAMETERNAME_LEN);
 				if((strlen(pWebpaCfg->X_COMCAST_COM_CID) == 0) || (strcmp(pWebpaCfg->X_COMCAST_COM_CID, "0") == 0))
 				{
-					WalPrint("CID is empty or 0, get value from DB\n");
+					WalInfo("CID is empty or 0, get value from DB\n");
 					CosaDmlWEBPA_GetValueFromDB( "X_COMCAST-COM_CID", pWebpaCfg->X_COMCAST_COM_CID );
 				}
                                 paramVal[k]->parameterValue = strndup(pWebpaCfg->X_COMCAST_COM_CID,MAX_PARAMETERVALUE_LEN);
@@ -764,11 +764,11 @@ int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size
     *val = paramVal;
     for(i=0; i<k; i++)
     {
-        WalPrint("Final-> %s %s %d\n",(*val)[i]->parameterName, (*val)[i]->parameterValue, (*val)[i]->type);
+        WalInfo("Final-> %s %s %d\n",(*val)[i]->parameterName, (*val)[i]->parameterValue, (*val)[i]->type);
     }
     *val_size = k;
-    WalPrint("Final count is %d\n",*val_size);
-    WalPrint("*********** %s ***************\n",__FUNCTION__);
+    WalInfo("Final count is %d\n",*val_size);
+    WalInfo("*********** %s ***************\n",__FUNCTION__);
     return CCSP_SUCCESS;
 }
 

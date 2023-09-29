@@ -442,30 +442,30 @@ int getComponentDetails(char *parameterName,char ***compName,char ***dbusPath, i
 #endif
 	snprintf(dst_pathname_cr, sizeof(dst_pathname_cr),"%s%s", l_Subsystem, CCSP_DBUS_INTERFACE_CR);
 	walStrncpy(tempParamName, parameterName,sizeof(tempParamName));
-	WalPrint("======= start of getComponentDetails ========\n");
+	WalInfo("======= start of getComponentDetails ========\n");
 	if(cachingStatus == 1)
 	{
-	        WalPrint("Component caching is ready, fetch component details from cache\n");
+	        WalInfo("Component caching is ready, fetch component details from cache\n");
 	        index = getComponentInfoFromCache(tempParamName, objectName, tempCompName, tempDbusPath);
         }
         else
         {
-                WalPrint("Component caching is not yet ready, fetch component details from stack\n");
+                WalInfo("Component caching is not yet ready, fetch component details from stack\n");
                 index = -1;
         }
-	WalPrint("index : %d\n",index);
+	WalInfo("index : %d\n",index);
 	// Cannot identify the component from cache, make DBUS call to fetch component
 	if(index == -1 || ComponentValArray[index].comp_size > 2 || SubComponentValArray[index].comp_size >= 2) //comp size anything > 2 and sub comp size >1 . TCCBR-5475 allows dbus calls when sub comp size>1.
 	{
-		WalPrint("in if for size >2\n");
+		WalInfo("in if for size >2\n");
 		// GET Component for parameter from stack
 		if(index > 0 && ComponentValArray[index].comp_size > 2)
 		{
-		        WalPrint("ComponentValArray[index].comp_size : %d\n",ComponentValArray[index].comp_size);
+		        WalInfo("ComponentValArray[index].comp_size : %d\n",ComponentValArray[index].comp_size);
 		}
 		else if(index > 0 && SubComponentValArray[index].comp_size >= 2)
 		{
-		        WalPrint("SubComponentValArray[index].comp_size : %d\n",SubComponentValArray[index].comp_size);
+		        WalInfo("SubComponentValArray[index].comp_size : %d\n",SubComponentValArray[index].comp_size);
 		}
 		retIndex = IndexMpa_WEBPAtoCPE(tempParamName);
 		if(retIndex == -1)
@@ -485,11 +485,11 @@ int getComponentDetails(char *parameterName,char ***compName,char ***dbusPath, i
             		*error = 1;
 			return ret;
 		}
-		WalPrint("Get component for parameterName : %s from stack\n",tempParamName);
+		WalInfo("Get component for parameterName : %s from stack\n",tempParamName);
 
 		ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle,
 			dst_pathname_cr, tempParamName, l_Subsystem, &ppComponents, &size);
-		WalPrint("size : %d, ret : %d\n",size,ret);
+		WalInfo("size : %d, ret : %d\n",size,ret);
 
 		if (ret == CCSP_SUCCESS)
 		{
@@ -501,7 +501,7 @@ int getComponentDetails(char *parameterName,char ***compName,char ***dbusPath, i
 				localDbusPath[i] = (char *) malloc (sizeof(char) * MAX_PARAMETERNAME_LEN);
 				strcpy(localCompName[i],ppComponents[i]->componentName);
 				strcpy(localDbusPath[i],ppComponents[i]->dbusPath);
-				WalPrint("localCompName[%d] : %s, localDbusPath[%d] : %s\n",i,localCompName[i],i, localDbusPath[i]);
+				WalInfo("localCompName[%d] : %s, localDbusPath[%d] : %s\n",i,localCompName[i],i, localDbusPath[i]);
 			}
 			
 			*retCount = size;
@@ -526,16 +526,16 @@ int getComponentDetails(char *parameterName,char ***compName,char ***dbusPath, i
 		strcpy(localDbusPath[0],tempDbusPath);
 		*retCount = 1;
 		size = 1;
-		WalPrint("localCompName[0] : %s, localDbusPath[0] : %s\n",localCompName[0], localDbusPath[0]);
+		WalInfo("localCompName[0] : %s, localDbusPath[0] : %s\n",localCompName[0], localDbusPath[0]);
 	}
 	
 	*compName = localCompName;
 	*dbusPath = localDbusPath;
 	for(i = 0; i < size; i++)
 	{
-		WalPrint("(*compName)[%d] : %s, (*dbusPath)[%d] : %s\n",i,(*compName)[i],i, (*dbusPath)[i]);
+		WalInfo("(*compName)[%d] : %s, (*dbusPath)[%d] : %s\n",i,(*compName)[i],i, (*dbusPath)[i]);
 	}
-	WalPrint("======= End of getComponentDetails ret =%d ========\n",ret);
+	WalInfo("======= End of getComponentDetails ret =%d ========\n",ret);
 	return CCSP_SUCCESS;
 }
 
@@ -544,23 +544,23 @@ void prepareParamGroups(ParamCompList **ParamGroup,int paramCount,int cnt1,char 
         int cnt2 =0, subParamCount =0,matchFlag = 0, tempCount=0;
         tempCount =*compCount;
         ParamCompList *localParamGroup = *ParamGroup;
-        WalPrint("============ start of prepareParamGroups ===========\n");
+        WalInfo("============ start of prepareParamGroups ===========\n");
         if(*ParamGroup == NULL)
         {
-                WalPrint("ParamCompList is null initializing\n");
+                WalInfo("ParamCompList is null initializing\n");
                 localParamGroup = (ParamCompList *) malloc(sizeof(ParamCompList));
            	localParamGroup[0].parameterCount = 1;
            	localParamGroup[0].comp_name = (char *) malloc(MAX_PARAMETERNAME_LEN/2);
                 strncpy(localParamGroup[0].comp_name, compName,MAX_PARAMETERNAME_LEN/2);
-                WalPrint("localParamGroup[0].comp_name : %s\n",localParamGroup[0].comp_name);
+                WalInfo("localParamGroup[0].comp_name : %s\n",localParamGroup[0].comp_name);
            	localParamGroup[0].dbus_path = (char *) malloc(MAX_PARAMETERNAME_LEN/2);
                 strncpy(localParamGroup[0].dbus_path, dbusPath,MAX_PARAMETERNAME_LEN/2);
-                WalPrint("localParamGroup[0].dbus_path :%s\n",localParamGroup[0].dbus_path);
+                WalInfo("localParamGroup[0].dbus_path :%s\n",localParamGroup[0].dbus_path);
                 // max number of parameter will be equal to the remaining parameters to be iterated (i.e. paramCount - cnt1)
                 localParamGroup[0].parameterName = (char **) malloc(sizeof(char *) * (paramCount - cnt1));
            	localParamGroup[0].parameterName[0] = (char *) malloc(MAX_PARAMETERNAME_LEN);
            	strncpy(localParamGroup[0].parameterName[0],paramName,MAX_PARAMETERNAME_LEN);
-                WalPrint("localParamGroup[0].parameterName[0] : %s\n",localParamGroup[0].parameterName[0]);
+                WalInfo("localParamGroup[0].parameterName[0] : %s\n",localParamGroup[0].parameterName[0]);
            	tempCount++;
         }
         else

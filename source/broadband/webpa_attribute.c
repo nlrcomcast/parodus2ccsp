@@ -50,26 +50,26 @@ void getAttributes(const char *paramName[], const unsigned int paramCount, money
 		{
 			break;
 		}
-		WalPrint("parameterName: %s count : %d\n",parameterName,count);
+		WalInfo("parameterName: %s count : %d\n",parameterName,count);
 		for(i = 0; i < count; i++)
 		{
-			WalPrint("compName[%d] : %s, dbusPath[%d] : %s\n", i,compName[i],i, dbusPath[i]);
+			WalInfo("compName[%d] : %s, dbusPath[%d] : %s\n", i,compName[i],i, dbusPath[i]);
 		  	prepareParamGroups(&ParamGroup,paramCount,cnt1,parameterName,compName[i],dbusPath[i],&compCount);
 		}
         	free_componentDetails(compName,dbusPath,count);
 	}//End of for loop
 	   
-	WalPrint("Number of parameter groups : %d\n",compCount);
+	WalInfo("Number of parameter groups : %d\n",compCount);
 	if(error != 1)
 	{
 		for(cnt1 = 0; cnt1 < compCount; cnt1++)
 		{
-			WalPrint("********** Parameter group ****************\n");
-		  	WalPrint("ParamGroup[%d].comp_name :%s, ParamGroup[%d].dbus_path :%s, ParamGroup[%d].parameterCount :%d\n",cnt1,ParamGroup[cnt1].comp_name, cnt1,ParamGroup[cnt1].dbus_path, cnt1,ParamGroup[cnt1].parameterCount);
+			WalInfo("********** Parameter group ****************\n");
+		  	WalInfo("ParamGroup[%d].comp_name :%s, ParamGroup[%d].dbus_path :%s, ParamGroup[%d].parameterCount :%d\n",cnt1,ParamGroup[cnt1].comp_name, cnt1,ParamGroup[cnt1].dbus_path, cnt1,ParamGroup[cnt1].parameterCount);
 		  	
 		  	for(cnt2 = 0; cnt2 < ParamGroup[cnt1].parameterCount; cnt2++)
 		  	{
-		 		WalPrint("ParamGroup[%d].parameterName :%s\n",cnt1,ParamGroup[cnt1].parameterName[cnt2]);
+		 		WalInfo("ParamGroup[%d].parameterName :%s\n",cnt1,ParamGroup[cnt1].parameterName[cnt2]);
 		  	}
 			if(!strcmp(ParamGroup[cnt1].comp_name,RDKB_WIFI_FULL_COMPONENT_NAME)&& applySettingsFlag == TRUE) 
 			{
@@ -79,7 +79,7 @@ void getAttributes(const char *paramName[], const unsigned int paramCount, money
 				break;
 			}
 		  	// GET atomic value call
-			WalPrint("index %d\n",index);
+			WalInfo("index %d\n",index);
 		  	ret = getParamAttributes(ParamGroup[cnt1].parameterName, ParamGroup[cnt1].parameterCount, ParamGroup[cnt1].comp_name, ParamGroup[cnt1].dbus_path, timeSpan, attr, index);
 		  	if(ret != CCSP_SUCCESS)
 		  	{
