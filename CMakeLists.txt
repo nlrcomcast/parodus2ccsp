@@ -98,7 +98,7 @@ if (NOT BUILD_YOCTO)
 ExternalProject_Add(cJSON
     PREFIX ${PREFIX_DIR}/cJSON
     GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
-    GIT_TAG "aafb64a1c549b7b927e339df6d35b1d5059dc235"
+    GIT_TAG "39853e5148dad8dc5d32ea2b00943cf4a0c6f120"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
 )
 add_library(libcJSON STATIC IMPORTED)
@@ -139,23 +139,23 @@ ExternalProject_Add(wdmp-c
 add_library(libwdmp-c STATIC SHARED IMPORTED)
 add_dependencies(libwdmp-c wdmp-c)
 
-# rbus external dependency
-#-------------------------------------------------------------------------------
-ExternalProject_Add(rbus
-     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus
-     GIT_REPOSITORY https://github.com/rdkcentral/rbus.git
-     GIT_TAG main
-     CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
-)
+## rbus external dependency
+##-------------------------------------------------------------------------------
+#ExternalProject_Add(rbus
+#     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus
+#     GIT_REPOSITORY https://github.com/rdkcentral/rbus.git
+#     GIT_TAG main
+#     CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
+#)
 
-add_library(librbuscore STATIC SHARED IMPORTED)
-add_dependencies(librbuscore rbuscore)
+#add_library(librbuscore STATIC SHARED IMPORTED)
+#add_dependencies(librbuscore rbuscore)
 
-add_library(librtMessage STATIC SHARED IMPORTED)
-add_dependencies(librtMessage rtMessage)
+#add_library(librtMessage STATIC SHARED IMPORTED)
+#add_dependencies(librtMessage rtMessage)
 
-add_library(librbus STATIC SHARED IMPORTED)
-add_dependencies(librbus rbus)
+#add_library(librbus STATIC SHARED IMPORTED)
+#add_dependencies(librbus rbus)
 
 if (FEATURE_SUPPORT_WEBCONFIG)
 # curl external dependency
@@ -336,8 +336,7 @@ endif () # NOT BUILD_YOCTO
 link_directories ( ${LIBRARY_DIR} ${COMMON_LIBRARY_DIR} ${LIBRARY_DIR64} )
 
 enable_testing()
-
-# add_subdirectory(source)
+add_subdirectory(source)
 
 # if (BUILD_TESTING)
 # add_subdirectory(tests)
