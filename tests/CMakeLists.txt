@@ -27,6 +27,7 @@ link_directories ( ${LIBRARY_DIR} )
 add_test(NAME test_libpd COMMAND ${MEMORY_CHECK} ./test_libpd)
 add_executable(test_libpd test_libpd.c ../source/app/libpd.c)
 target_link_libraries (test_libpd -lwrp-c ${WEBPA_COMMON_LIBS} -llibparodus)
+target_link_libraries (test_libpd gcov -Wl,--no-as-needed )
 
 # #-------------------------------------------------------------------------------
 # #   test_webpa_adapter
@@ -77,3 +78,14 @@ target_link_libraries (test_libpd -lwrp-c ${WEBPA_COMMON_LIBS} -llibparodus)
 # add_executable(test_webpa_replace test_webpa_replace.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_replace.c ${WEBPA_COMMON_SOURCES})
 # target_link_libraries (test_webpa_replace -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 
+# Code coverage
+
+add_custom_target(coverage
+COMMAND lcov -q --capture --directory 
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_libpd.dir/__/src --output-file test_libpd.info
+
+COMMAND lcov
+-a test_libpd.info
+
+COMMAND genhtml coverage.info
+WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
