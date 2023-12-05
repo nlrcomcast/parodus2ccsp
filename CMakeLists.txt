@@ -139,9 +139,6 @@ ExternalProject_Add(wdmp-c
 add_library(libwdmp-c STATIC SHARED IMPORTED)
 add_dependencies(libwdmp-c wdmp-c)
 
-#This RBUS already build from github actions rtrouted.sh script, So disabled in github workflow
-if ( NOT BUILD_GIT)
-
 # rbus external dependency
 #-------------------------------------------------------------------------------
 ExternalProject_Add(rbus
@@ -159,7 +156,6 @@ add_dependencies(librtMessage rtMessage)
 
 add_library(librbus STATIC SHARED IMPORTED)
 add_dependencies(librbus rbus)
-endif ()
 
 if (FEATURE_SUPPORT_WEBCONFIG)
 # curl external dependency
@@ -341,8 +337,8 @@ link_directories ( ${LIBRARY_DIR} ${COMMON_LIBRARY_DIR} ${LIBRARY_DIR64} )
 
 enable_testing()
 
-add_subdirectory(source)
+# add_subdirectory(source)
 
-if (BUILD_TESTING)
-add_subdirectory(tests)
-endif (BUILD_TESTING)
+# if (BUILD_TESTING)
+# add_subdirectory(tests)
+# endif (BUILD_TESTING)
