@@ -60,10 +60,10 @@ jobs:
           export RBUS_ROOT=${HOME}/rbus
           export RBUS_INSTALL_DIR=${RBUS_ROOT}/install && \
           export LD_LIBRARY_PATH=${RBUS_INSTALL_DIR}/usr/lib/rbus_temp_lib:${LD_LIBRARY_PATH}            
-          export C_INCLUDE_PATH=${RBUS_INSTALL_DIR}/usr/include                   
-          mkdir _install
-          mkdir _install/lib
-          cp ${RBUS_INSTALL_DIR}/usr/lib/librbus* _install/lib
+          #export C_INCLUDE_PATH=${RBUS_INSTALL_DIR}/usr/include                   
+          #mkdir _install
+          #mkdir _install/lib
+          #cp ${RBUS_INSTALL_DIR}/usr/lib/librbus* _install/lib
           build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir bw-output make all
           ls -al _install/lib
 
