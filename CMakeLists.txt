@@ -139,14 +139,14 @@ ExternalProject_Add(wdmp-c
 add_library(libwdmp-c STATIC SHARED IMPORTED)
 add_dependencies(libwdmp-c wdmp-c)
 
-## rbus external dependency
-##-------------------------------------------------------------------------------
-#ExternalProject_Add(rbus
-#     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus
-#     GIT_REPOSITORY https://github.com/rdkcentral/rbus.git
-#     GIT_TAG main
-#     CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
-#)
+# rbus external dependency
+#-------------------------------------------------------------------------------
+ExternalProject_Add(rbus
+     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus
+     GIT_REPOSITORY https://github.com/rdkcentral/rbus.git
+     GIT_TAG main
+     CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
+)
 
 #add_library(librbuscore STATIC SHARED IMPORTED)
 #add_dependencies(librbuscore rbuscore)
