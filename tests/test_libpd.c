@@ -21,7 +21,8 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <cmocka.h>
-
+#include <unistd.h>
+#include <sys/stat.h>
 #include <CUnit/Basic.h>
 
 #include "../source/include/webpa_adapter.h"
@@ -30,14 +31,44 @@
 #include <libparodus.h>
 
 #define UNUSED(x) (void )(x)
+#ifdef BUILD_YOCTO
+#define DEVICE_PROPS_FILE       "/etc/device.properties"
+#else
+#define DEVICE_PROPS_FILE       "/tmp/device.properties"
+#endif
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
 extern libpd_instance_t current_instance;
+extern int wakeUpFlag;
 int numLoops=1;
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
+int writeToDBFile(char *db_file_path, char *data, size_t size)
+{
+	FILE *fp;
+    int out = creat(db_file_path, S_IWUSR | S_IRUSR);
+	fp = fopen(db_file_path , "a");
+	if (fp == NULL)
+	{
+		WalError("Failed to open file in db %s\n", db_file_path );
+		return 0;
+	}
+	if(data !=NULL)
+	{
+		fwrite(data, size, 1, fp);
+		fclose(fp);
+		return 1;
+	}
+	else
+	{
+		WalError("WriteToJson failed, Data is NULL\n");
+		fclose(fp);
+		return 0;
+	}
+}
+
 void clearTraceContext()
 {
 
@@ -60,9 +91,21 @@ void processRequest(char *reqPayload, char *transactionId, char **resPayload, he
 {
     UNUSED(reqPayload);
     UNUSED(transactionId);
-    UNUSED(resPayload);
+    if(reqPayload == NULL)
+        UNUSED(resPayload);
+    else
+        *resPayload = strdup("{\"parameters\":[{\"name\":\"Device.DeviceInfo.TestApp\",\"value\":\"ACTIVE\",\"dataType\":0,\"parameterCount\":1,\"message\":\"Success\"}],\"statusCode\":200}");
     UNUSED(req_headers);
-    UNUSED(res_headers);    
+    if(req_headers == NULL)
+    {
+        UNUSED(res_headers);
+    }
+    else
+    {
+        res_headers->count = req_headers->count;
+        res_headers->headers[0] = strdup(req_headers->headers[0]);
+        res_headers->headers[1] = strdup(req_headers->headers[1]);                            
+    }
 }
 
 int libparodus_init (libpd_instance_t *instance, libpd_cfg_t *libpd_cfg)
@@ -78,6 +121,18 @@ int libparodus_send (libpd_instance_t instance, wrp_msg_t *msg)
     UNUSED(msg);
     function_called();
     return (int) mock();
+}
+wrp_msg_t *msg_tmp = NULL;
+int libparodus_receive (libpd_instance_t instance, wrp_msg_t **msg, uint32_t ms)
+{
+    UNUSED(instance);
+    if(msg_tmp == NULL)
+        UNUSED(msg);  
+    else
+        *msg = msg_tmp;
+    UNUSED(ms);        
+    function_called();
+    return (int) mock();    
 }
 
 unsigned int sleep(unsigned int seconds)
@@ -97,9 +152,32 @@ unsigned int sleep(unsigned int seconds)
 
 void test_libpd_client_mgr()
 {    
+        will_return(libparodus_init, (intptr_t)1);
+        expect_function_call(libparodus_init);
+        will_return(libparodus_init, (intptr_t)1);        
+        expect_function_call(libparodus_init);        
+        will_return(libparodus_init, (intptr_t)1);        
+        expect_function_call(libparodus_init);     
+        will_return(libparodus_init, (intptr_t)1);        
+        expect_function_call(libparodus_init);                     
         will_return(libparodus_init, (intptr_t)0);
         expect_function_call(libparodus_init);
         libpd_client_mgr();           
+}
+
+void err_libpd_client_mgr()
+{
+        char *parodus_url = "PARODUS_URL=tcp://127.0.0.1:6666\nWEBPA_CLIENT_URL=tcp://127.0.0.1:6667\n";
+        writeToDBFile(DEVICE_PROPS_FILE,NULL,0);    
+        will_return(libparodus_init, (intptr_t)0);
+        expect_function_call(libparodus_init);
+        libpd_client_mgr();  
+
+        writeToDBFile(DEVICE_PROPS_FILE,parodus_url,strlen(parodus_url));          
+        will_return(libparodus_init, (intptr_t)0);
+        expect_function_call(libparodus_init);
+        libpd_client_mgr();
+        remove(DEVICE_PROPS_FILE);    
 }
 
 void test_sendNotification()
@@ -162,6 +240,68 @@ void err_getConnCloudStatus()
 	ret = getConnCloudStatus("");
 	assert_int_equal(-1,ret);
 }
+
+void test_parallelProcessTask()
+{
+    numLoops = 1;
+    msg_tmp = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
+    memset(msg_tmp, 0, sizeof(wrp_msg_t));
+    msg_tmp->msg_type = WRP_MSG_TYPE__REQ;
+    msg_tmp->u.req.headers = (headers_t *)malloc(sizeof(headers_t));
+    msg_tmp->u.req.headers->count = 2; 
+    msg_tmp->u.req.payload  = strdup("{\"parameters\":[{\"name\":\"Device.DeviceInfo.TestingApp\",\"value\":\"ACTIVE\",\"dataType\":0,\"parameterCount\":1,\"message\":\"Success\"}],\"statusCode\":200}");
+    msg_tmp->u.req.transaction_uuid = strdup("RYjWZTaP4TTTkZ6HhwjGLA");
+    msg_tmp->u.req.headers->headers[0] = strdup("123");
+    msg_tmp->u.req.headers->headers[1] = strdup("xyz");  
+    msg_tmp->u.req.source = strdup("dns:uvxyz.webpa.comcast.net");
+    msg_tmp->u.req.dest = strdup("mac:dcebxxxxxxxx/config");
+    will_return(libparodus_receive, (intptr_t)0);
+    expect_function_call(libparodus_receive);  
+    will_return(libparodus_send, (intptr_t)0);
+    expect_function_call(libparodus_send);
+    parallelProcessTask(NULL);             
+}
+
+void test_cloudstatus_parallelProcessTask()
+{
+    numLoops = 1;
+    msg_tmp = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
+    memset(msg_tmp, 0, sizeof(wrp_msg_t));
+    msg_tmp->msg_type = WRP_MSG_TYPE__RETREIVE;
+    msg_tmp->u.crud.source  = strdup("mac:5896xxxxxxxx/parodus/cloud-status");
+    msg_tmp->u.crud.transaction_uuid = strdup("f804ba0d-fd7e-42b0-a00e-27c669da4b6e"); 
+    msg_tmp->u.crud.status = 0;
+    msg_tmp->u.crud.payload = strdup("{\"cloud-status\":\"online\"}");
+    will_return(libparodus_receive, (intptr_t)0);
+    expect_function_call(libparodus_receive);   
+    parallelProcessTask(NULL);        
+}
+void err_parallelProcessTask()
+{
+    numLoops = 2;
+    will_return(libparodus_receive, (intptr_t)1);
+    expect_function_call(libparodus_receive);    
+    will_return(libparodus_receive, (intptr_t)2);
+    expect_function_call(libparodus_receive);       
+    parallelProcessTask(NULL); 
+}
+
+void test_rdk_logger_module_fetch()
+{
+    rdk_logger_module_fetch();
+}
+
+void test_parsePayloadForStatus()
+{
+    char *status = NULL;
+    status = parsePayloadForStatus(NULL);
+    assert_int_equal(status,NULL);
+    status = parsePayloadForStatus("{\"cloudstatus\":\"online\"}");
+    assert_int_equal(status,NULL);
+    status = parsePayloadForStatus("{\"cloud-status\":\"\"}");
+    assert_int_equal(status,NULL);
+}    
+
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -170,11 +310,17 @@ int main(void)
 {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_libpd_client_mgr),
+        cmocka_unit_test(err_libpd_client_mgr),
         cmocka_unit_test(test_sendNotification),
         cmocka_unit_test(err_sendNotification),
 		cmocka_unit_test(test_getConnCloudStatus),
 		cmocka_unit_test(test_getConnCloudStatusOffline),
-		cmocka_unit_test(err_getConnCloudStatus)
+		cmocka_unit_test(err_getConnCloudStatus),
+        cmocka_unit_test(test_parallelProcessTask),
+        cmocka_unit_test(test_cloudstatus_parallelProcessTask),
+        cmocka_unit_test(err_parallelProcessTask),
+        cmocka_unit_test(test_rdk_logger_module_fetch),
+        cmocka_unit_test(test_parsePayloadForStatus) 
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
