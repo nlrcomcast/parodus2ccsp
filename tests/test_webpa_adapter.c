@@ -21,6 +21,8 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <cmocka.h>
+#include <string.h>
+#include <rbus/rbus.h>
 
 #include "../source/include/webpa_adapter.h"
 #include <cimplog/cimplog.h>
@@ -39,6 +41,14 @@ WDMP_STATUS status;
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
+rbusError_t getTraceContext(char* traceContext[])
+{
+    UNUSED(traceContext);
+}
+rbusError_t setTraceContext(char* traceContext[])
+{
+    UNUSED(traceContext);
+}
 void getValues(const char *paramName[], const unsigned int paramCount, int index, money_trace_spans *timeSpan, param_t ***paramArr, int *retValCount, WDMP_STATUS *retStatus)
 {
     UNUSED(paramName); UNUSED(paramCount); UNUSED(index); UNUSED(timeSpan);
@@ -131,6 +141,8 @@ void test_processRequest_singleGet()
     char *reqPayload = "{ \"names\":[\"Device.DeviceInfo.Webpa.Enable\"],\"command\": \"GET\"}";
     char *transactionId = "aasfsdfgeh"; 
     char *resPayload = NULL;
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
     cJSON *response = NULL, *paramArray = NULL, *resParamObj = NULL;
     count = 1;
     parameterList = (param_t **) malloc(sizeof(param_t*));
@@ -144,7 +156,7 @@ void test_processRequest_singleGet()
     expect_value(getValues, paramCount, 1);
     expect_value(getValues, index, 0);
     expect_function_call(getValues);
-    processRequest(reqPayload, transactionId, &resPayload);
+    processRequest(reqPayload, transactionId, &resPayload, req_headers, res_headers);
     WalInfo("resPayload : %s\n",resPayload);
     assert_non_null(resPayload);
     response = cJSON_Parse(resPayload);
@@ -171,6 +183,8 @@ void test_processRequest_WildcardsGet()
     char *transactionId = "aasfsdfgehhdysy";
     char *resPayload = NULL;
     int i = 0;
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;    
     cJSON *response = NULL, *paramArray = NULL, *resParamObj = NULL, *value = NULL, *valueObj = NULL;
     count = 3;
     char *names[MAX_PARAMETER_LEN] = {"Device.DeviceInfo.Webpa.CMC", "Device.DeviceInfo.Webpa.CID", "Device.DeviceInfo.Webpa.Version"};
@@ -190,7 +204,7 @@ void test_processRequest_WildcardsGet()
     expect_value(getValues, paramCount, 1);
     expect_value(getValues, index, 0);
     expect_function_call(getValues);
-    processRequest(reqPayload, transactionId, &resPayload);
+    processRequest(reqPayload, transactionId, &resPayload ,req_headers, res_headers);
     WalInfo("resPayload : %s\n",resPayload);
     assert_non_null(resPayload);
     response = cJSON_Parse(resPayload);
