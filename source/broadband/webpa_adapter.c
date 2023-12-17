@@ -252,31 +252,31 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                         case SET:
                         case SET_ATTRIBUTES:
                         {
-                                WalPrint("Request:> ParamCount = %zu\n",reqObj->u.setReq->paramCnt);
+                                WalInfo("Request:> ParamCount = %zu\n",reqObj->u.setReq->paramCnt);
                                 resObj->paramCnt = reqObj->u.setReq->paramCnt;
-                                WalPrint("Response:> paramCnt = %zu\n", resObj->paramCnt);
+                                WalInfo("Response:> paramCnt = %zu\n", resObj->paramCnt);
                                 resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS)*resObj->paramCnt);
                                 resObj->timeSpan = NULL;
                                 paramCount = (int)reqObj->u.setReq->paramCnt;
                                 resObj->u.paramRes = (param_res_t *) malloc(sizeof(param_res_t));
                                 memset(resObj->u.paramRes, 0, sizeof(param_res_t));
                                 
-				WalPrint("Before setTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
+				WalInfo("Before setTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
                                 if(req_headers != NULL && req_headers->headers[0] != NULL && req_headers->headers[1] != NULL) {
                                         setTraceContext(req_headers->headers);
                                 }
-                                WalPrint("After setTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
+                                WalInfo("After setTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
 
                                 for (i = 0; i < paramCount; i++) 
                                 {
-                                        WalPrint("Request:> param[%d].name = %s\n",i,reqObj->u.setReq->param[i].name);
-                                        WalPrint("Request:> param[%d].value = %s\n",i,reqObj->u.setReq->param[i].value);
-                                        WalPrint("Request:> param[%d].type = %d\n",i,reqObj->u.setReq->param[i].type);
+                                        WalInfo("Request:> param[%d].name = %s\n",i,reqObj->u.setReq->param[i].name);
+                                        WalInfo("Request:> param[%d].value = %s\n",i,reqObj->u.setReq->param[i].value);
+                                        WalInfo("Request:> param[%d].type = %d\n",i,reqObj->u.setReq->param[i].type);
                                         setRebootReason(reqObj->u.setReq->param[i], WEBPA_SET);
                                 }
                                 
                                 ret = validate_parameter(reqObj->u.setReq->param, paramCount, reqObj->reqType);
-                                WalPrint("ret : %d\n",ret);
+                                WalInfo("ret : %d\n",ret);
                                 if(ret == WDMP_SUCCESS)
                                 {
                                         if(reqObj->reqType == SET)
@@ -295,38 +295,38 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                         {
                                                 resObj->u.paramRes->params[i].name = (char *) malloc(sizeof(char) * MAX_PARAMETERNAME_LEN);
                                                 strcpy(resObj->u.paramRes->params[i].name, reqObj->u.setReq->param[i].name);
-                                                WalPrint("Response:> params[%d].name = %s\n",i,resObj->u.paramRes->params[i].name);
+                                                WalInfo("Response:> params[%d].name = %s\n",i,resObj->u.paramRes->params[i].name);
                                                 resObj->u.paramRes->params[i].value = NULL;
                                                 resObj->u.paramRes->params[i].type = 0;
                                                 
                                         }
                                         
-                                        WalPrint("ret : %d\n",ret);
+                                        WalInfo("ret : %d\n",ret);
                                         for (i = 0; i < paramCount; i++) 
                                         {
                                                 resObj->retStatus[i] = ret;
-                                                WalPrint("Response:> retStatus[%d] = %d\n",i,resObj->retStatus[i]);
+                                                WalInfo("Response:> retStatus[%d] = %d\n",i,resObj->retStatus[i]);
                                         }
                                 }
                                 else
                                 {
                                         resObj->retStatus[0] = ret;
-                                        WalPrint("Response:> resObj->retStatus[0] = %d\n",resObj->retStatus[0]);
+                                        WalInfo("Response:> resObj->retStatus[0] = %d\n",resObj->retStatus[0]);
                                 }
                                 
-				WalPrint("Before getTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
+				WalInfo("Before getTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
 				if(res_headers != NULL) {
                                 	getTraceContext(res_headers->headers);
 				}	
-                                WalPrint("After getTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
+                                WalInfo("After getTraceContext in WEBPA SET or SET_ATTRIBUTES request\n");
                         }
                         break;
                         
                         case TEST_AND_SET:
                         {
-                                WalPrint("Request:> ParamCount = %zu\n",reqObj->u.testSetReq->paramCnt);
+                                WalInfo("Request:> ParamCount = %zu\n",reqObj->u.testSetReq->paramCnt);
                                 resObj->paramCnt = reqObj->u.testSetReq->paramCnt;
-                                WalPrint("Response:> paramCnt = %zu\n", resObj->paramCnt);
+                                WalInfo("Response:> paramCnt = %zu\n", resObj->paramCnt);
                                 resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS));
                                 resObj->timeSpan = NULL;
                                 paramCount = (int)reqObj->u.testSetReq->paramCnt;
@@ -345,36 +345,36 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                 snprintf(newCMC, sizeof(newCMC),"%d", CHANGED_BY_XPC);
                                 WalInfo("newCMC : %s\n",newCMC);
                                 
-				WalPrint("Before setTraceContext in WEBPA TEST_AND_SET request\n");
+				WalInfo("Before setTraceContext in WEBPA TEST_AND_SET request\n");
                                 if(req_headers != NULL && req_headers->headers[0] != NULL && req_headers->headers[1] != NULL) {
                                         setTraceContext(req_headers->headers);
                                 }
-                                WalPrint("After setTraceContext in WEBPA TEST_AND_SET request\n");
+                                WalInfo("After setTraceContext in WEBPA TEST_AND_SET request\n");
 
                                 for (i = 0; i < paramCount; i++) 
                                 {
-                                        WalPrint("Request:> param[%d].name = %s\n",i,reqObj->u.setReq->param[i].name);
-                                        WalPrint("Request:> param[%d].value = %s\n",i,reqObj->u.setReq->param[i].value);
-                                        WalPrint("Request:> param[%d].type = %d\n",i,reqObj->u.setReq->param[i].type);
+                                        WalInfo("Request:> param[%d].name = %s\n",i,reqObj->u.setReq->param[i].name);
+                                        WalInfo("Request:> param[%d].value = %s\n",i,reqObj->u.setReq->param[i].value);
+                                        WalInfo("Request:> param[%d].type = %d\n",i,reqObj->u.setReq->param[i].type);
                                         setRebootReason(reqObj->u.setReq->param[i], WEBPA_ATOMIC_SET_XPC);
                                 }
                                 
                                 if(dbCMC != NULL && dbCID != NULL)
 	                        {
 	                                ret = validate_cmc_and_cid(reqObj->u.testSetReq, dbCMC, dbCID);
-	                                WalPrint("ret : %d\n",ret);
+	                                WalInfo("ret : %d\n",ret);
 	                                if(ret == WDMP_SUCCESS)
 	                                {
 	                                        ret = set_cmc_and_cid(dbCMC, reqObj->u.testSetReq->newCid, 1);
-	                                        WalPrint("ret : %d\n",ret);
+	                                        WalInfo("ret : %d\n",ret);
 	                                        if(ret == WDMP_SUCCESS && paramCount > 0)
 	                                        {
                                                         ret = validate_parameter(reqObj->u.testSetReq->param, paramCount, reqObj->reqType);
-                                                        WalPrint("ret : %d\n",ret);
+                                                        WalInfo("ret : %d\n",ret);
                                                         if(ret == WDMP_SUCCESS)
 	                                                {
 	                                                        setValues(reqObj->u.setReq->param, paramCount, WEBPA_ATOMIC_SET_XPC, transactionId, resObj->timeSpan, &ret, &ccspStatus);
-	                                                        WalPrint("SPV ret : %d\n",ret);
+	                                                        WalInfo("SPV ret : %d\n",ret);
 	                                                        if(ret == WDMP_SUCCESS)
 	                                                        {
 	                                                             WalInfo("Atomic set is success\n");
@@ -383,9 +383,9 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
 	                                                
 	                                                if(ret != WDMP_SUCCESS)
                                                         {
-                                                                WalPrint("Atomic set is failed. Hence reverting device CID ...\n");
+                                                                WalInfo("Atomic set is failed. Hence reverting device CID ...\n");
                                                                 setRet = set_cmc_and_cid(dbCMC, reqObj->u.testSetReq->oldCid, 0);
-                                                                WalPrint("setRet : %d\n",setRet);
+                                                                WalInfo("setRet : %d\n",setRet);
                                                                 if(setRet == WDMP_SUCCESS)
                                                                 {
                                                                         WalInfo("Reverted device CID to %s\n", reqObj->u.testSetReq->oldCid);
@@ -404,7 +404,7 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                         WalError("Failed to Get CMC, CID value\n");
                                 }   
                                 
-                                WalPrint("ret : %d\n",ret);
+                                WalInfo("ret : %d\n",ret);
                                 resObj->u.paramRes->syncCMC = (char *) malloc(sizeof(char) * MAX_PARAMETERNAME_LEN);
                                 resObj->u.paramRes->syncCID = (char *) malloc(sizeof(char) * MAX_PARAMETERNAME_LEN);
         
@@ -419,33 +419,33 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                     strcpy(resObj->u.paramRes->syncCID, (NULL != dbCID) ? dbCID: "NULL");    
 				}
                                 
-                                WalPrint("Response:> CMC = %s\n",resObj->u.paramRes->syncCMC);
-                                WalPrint("Response:> CID = %s\n",resObj->u.paramRes->syncCID);
+                                WalInfo("Response:> CMC = %s\n",resObj->u.paramRes->syncCMC);
+                                WalInfo("Response:> CID = %s\n",resObj->u.paramRes->syncCID);
                                 resObj->retStatus[0] = ret;
-                                WalPrint("Response:> retStatus = %d\n",resObj->retStatus[0]);
+                                WalInfo("Response:> retStatus = %d\n",resObj->retStatus[0]);
                                 WAL_FREE(dbCMC);
                                 WAL_FREE(dbCID);
 				
-				WalPrint("Before getTraceContext in WEBPA TEST_AND_SET request\n");
+				WalInfo("Before getTraceContext in WEBPA TEST_AND_SET request\n");
 				if(res_headers != NULL) {
                                 	getTraceContext(res_headers->headers);
 				}	
-                                WalPrint("After getTraceContext in WEBPA TEST_AND_SET request\n");
+                                WalInfo("After getTraceContext in WEBPA TEST_AND_SET request\n");
                         }
                         break;
                         
                         case REPLACE_ROWS:
                         {
-                                WalPrint("Request:> ParamCount = %zu\n",reqObj->u.tableReq->rowCnt);
+                                WalInfo("Request:> ParamCount = %zu\n",reqObj->u.tableReq->rowCnt);
                                 resObj->paramCnt = reqObj->u.tableReq->rowCnt;
-                                WalPrint("Response:> paramCnt = %zu\n", resObj->paramCnt);
+                                WalInfo("Response:> paramCnt = %zu\n", resObj->paramCnt);
 				if(resObj->paramCnt == 0)
 					resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS)*1);
 				else
                                 	resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS)*resObj->paramCnt);
 
                                 resObj->timeSpan = NULL;
-                                WalPrint("Request:> Object Name = %s\n",reqObj->u.tableReq->objectName);
+                                WalInfo("Request:> Object Name = %s\n",reqObj->u.tableReq->objectName);
 
                                 ret = validate_table_object(reqObj->u.tableReq);
                                 if(ret == WDMP_SUCCESS)
@@ -456,24 +456,24 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                 {
                                         WalError("Table object validations failed\n");
                                 }
-                                WalPrint("Response:> ret = %d\n",ret);
+                                WalInfo("Response:> ret = %d\n",ret);
                                 *resObj->retStatus = ret;
-                                WalPrint("Response:> retStatus = %d\n", *resObj->retStatus);
+                                WalInfo("Response:> retStatus = %d\n", *resObj->retStatus);
                         }
                         break;
                         
                         case DELETE_ROW:
                         {
-                                WalPrint("Request:> ParamCount = %zu\n",reqObj->u.tableReq->rowCnt);
+                                WalInfo("Request:> ParamCount = %zu\n",reqObj->u.tableReq->rowCnt);
                                 resObj->paramCnt = reqObj->u.tableReq->rowCnt;
-                                WalPrint("Response:> paramCnt = %zu\n", resObj->paramCnt);
+                                WalInfo("Response:> paramCnt = %zu\n", resObj->paramCnt);
 				if(resObj->paramCnt == 0)
 					resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS)*1);
 				else
                                 	resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS)*resObj->paramCnt);
 
                                 resObj->timeSpan = NULL;
-                                WalPrint("Request:> Object Name = %s\n",reqObj->u.tableReq->objectName);
+                                WalInfo("Request:> Object Name = %s\n",reqObj->u.tableReq->objectName);
 
                                 ret = validate_table_object(reqObj->u.tableReq);
                                 if(ret == WDMP_SUCCESS)
@@ -484,18 +484,18 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                 {
                                         WalError("Table object validations failed\n");
                                 }
-                                WalPrint("Response:> ret = %d\n",ret);
+                                WalInfo("Response:> ret = %d\n",ret);
                                 *resObj->retStatus = ret;
-                                WalPrint("Response:> retStatus = %d\n", *resObj->retStatus);
+                                WalInfo("Response:> retStatus = %d\n", *resObj->retStatus);
                         }
                         break;
                         
                         case ADD_ROWS:
                         {
-                                WalPrint("Request:> ParamCount = %zu\n",reqObj->u.tableReq->rowCnt);
+                                WalInfo("Request:> ParamCount = %zu\n",reqObj->u.tableReq->rowCnt);
                                 resObj->paramCnt = reqObj->u.tableReq->rowCnt;
-                                WalPrint("Response:> paramCnt = %zu\n", resObj->paramCnt);
-                                WalPrint("Request:> Object Name = %s\n",reqObj->u.tableReq->objectName);
+                                WalInfo("Response:> paramCnt = %zu\n", resObj->paramCnt);
+                                WalInfo("Request:> Object Name = %s\n",reqObj->u.tableReq->objectName);
                                 resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS)*resObj->paramCnt);
                                 resObj->timeSpan = NULL;
 
@@ -517,16 +517,16 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                         }
                                         else
                                         {
-                                                WalPrint("Response:> newObj = %s\n",resObj->u.tableRes->newObj);
+                                                WalInfo("Response:> newObj = %s\n",resObj->u.tableRes->newObj);
                                         }
                                 }
                                 else
                                 {
                                         WalError("Table object validations failed\n");
                                 }
-                                WalPrint("Response:> ret = %d\n",ret);
+                                WalInfo("Response:> ret = %d\n",ret);
                                 *resObj->retStatus = ret;
-                                WalPrint("Response:> retStatus = %d\n", *resObj->retStatus);
+                                WalInfo("Response:> retStatus = %d\n", *resObj->retStatus);
                         }
                         break;
                 }
@@ -537,10 +537,10 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
 	}
 
         wdmp_form_response(resObj,&payload);
-        WalPrint("payload : %s\n",payload);
+        WalInfo("payload : %s\n",payload);
         *resPayload = payload;
         
-        WalPrint("Response:> Payload = %s\n", *resPayload);
+        WalInfo("Response:> Payload = %s\n", *resPayload);
         
         if(NULL != reqObj)
         {
@@ -550,7 +550,7 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
         {
                 wdmp_free_res_struct(resObj);
         }
-        WalPrint("************** processRequest *****************\n");
+        WalInfo("************** processRequest *****************\n");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -566,7 +566,7 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
  */
 static WDMP_STATUS validate_cmc_and_cid(test_set_req_t *testSetReq, char *dbCMC, char *dbCID)
 {
-	WalPrint("------------ validate_cmc_and_cid ----------\n");
+	WalInfo("------------ validate_cmc_and_cid ----------\n");
 	
 	if((NULL == dbCMC) || (NULL == dbCID))
 	{
@@ -610,7 +610,7 @@ static WDMP_STATUS validate_cmc_and_cid(test_set_req_t *testSetReq, char *dbCMC,
 static WDMP_STATUS set_cmc_and_cid(char *dbCMC, char *cid, int isNew)
 {
         char newCMC[32]={'\0'};
-        WalPrint("------------ set_cmc_and_cid ----------\n");
+        WalInfo("------------ set_cmc_and_cid ----------\n");
 	
 	if((NULL == dbCMC) || (NULL == cid))
 	{
@@ -620,7 +620,7 @@ static WDMP_STATUS set_cmc_and_cid(char *dbCMC, char *cid, int isNew)
 	
         WDMP_STATUS setCmcStatus = WDMP_SUCCESS, setCidStatus = WDMP_SUCCESS;
         snprintf(newCMC, sizeof(newCMC),"%d", CHANGED_BY_XPC);
-        WalPrint("newCMC : %s\n",newCMC);
+        WalInfo("newCMC : %s\n",newCMC);
         setCidStatus = setParameterValue(PARAM_CID, cid, WDMP_STRING);
         if(strcmp(dbCMC, newCMC) != 0)
         {
@@ -652,7 +652,7 @@ static WDMP_STATUS set_cmc_and_cid(char *dbCMC, char *cid, int isNew)
 WDMP_STATUS validate_parameter(param_t *param, int paramCount, REQ_TYPE type)
 {
         int i = 0;
-        WalPrint("------------ validate_parameter ----------\n");
+        WalInfo("------------ validate_parameter ----------\n");
         for (i = 0; i < paramCount; i++) 
         {
                 if(param[i].name == NULL || param[i].value == NULL)
@@ -713,7 +713,7 @@ WDMP_STATUS validate_parameter(param_t *param, int paramCount, REQ_TYPE type)
 static WDMP_STATUS validate_table_object(table_req_t *tableObj)
 {
         int i = 0, j = 0;
-        WalPrint("------------ validate_table_object ----------\n");
+        WalInfo("------------ validate_table_object ----------\n");
         if(strlen(tableObj->objectName) >= MAX_PARAMETERNAME_LEN)
         {
                 return WDMP_ERR_INVALID_PARAM;
@@ -767,7 +767,7 @@ static void setRebootReason(param_t param, WEBPA_SET_TYPE setType)
 		}
 		else
 		{
-			WalPrint("Successfully set Reason with status %d\n",retReason);
+			WalInfo("Successfully set Reason with status %d\n",retReason);
 		}
 
 		WAL_FREE(rebootParam);
