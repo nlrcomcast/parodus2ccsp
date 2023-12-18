@@ -10,7 +10,11 @@
 #include "wdmp-c.h"
 #include "webpa_adapter.h"
 
-
+#if defined(BUILD_YOCTO)
+    #define WEBPA_CFG_FILE                     "/nvram/webpa_cfg.json"
+#else
+    #define WEBPA_CFG_FILE    "/tmp/webpa_dummy.json"
+#endif
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/

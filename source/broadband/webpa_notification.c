@@ -31,7 +31,7 @@
 #define PARAM_HOSTS_VERSION	        "Device.Hosts.X_RDKCENTRAL-COM_HostVersionId"
 #define PARAM_SYSTEM_TIME		        "Device.DeviceInfo.X_RDKCENTRAL-COM_SystemTime"
 #define PARAM_FIRMWARE_VERSION		        "Device.DeviceInfo.X_CISCO_COM_FirmwareName"
-#define WEBPA_CFG_FILE                     "/nvram/webpa_cfg.json"
+//#define WEBPA_CFG_FILE                     "/nvram/webpa_cfg.json"
 #define WEBPA_CFG_FIRMWARE_VER		"oldFirmwareVersion"
 #define DEVICE_BOOT_TIME                "Device.DeviceInfo.X_RDKCENTRAL-COM_BootTime"
 #define FP_PARAM                  "Device.DeviceInfo.X_RDKCENTRAL-COM_DeviceFingerPrint.Enable"
@@ -258,7 +258,7 @@ void initNotifyTask(int status)
 	}
 	else
 	{
-		WalPrint("notifyTask Thread created Successfully\n");
+		WalInfo("notifyTask Thread created Successfully\n");
 	}
 }
 
@@ -520,7 +520,7 @@ void loadCfgFile()
 			return WDMP_FAILURE;
 		}
 	cfg_file_content[ch_count] ='\0';
-	WalPrint("cfg_file_content : \n%s\n",cfg_file_content);
+	WalInfo("cfg_file_content : \n%s\n",cfg_file_content);
 	fclose(fp);
 
 	if(flag == 0)
@@ -529,13 +529,13 @@ void loadCfgFile()
 
 		if(webpa_cfg)
 		{
-			WalPrint("**********Loading Webpa Config***********\n");
+			WalInfo("**********Loading Webpa Config***********\n");
 
 			if(cJSON_GetObjectItem(webpa_cfg, WEBPA_CFG_FIRMWARE_VER) != NULL)
 			{
 				temp_ptr = cJSON_GetObjectItem(webpa_cfg, WEBPA_CFG_FIRMWARE_VER)->valuestring;
 				strncpy(webPaCfg.oldFirmwareVersion, temp_ptr, strlen(temp_ptr)+1);
-				WalPrint("oldFirmwareVersion : %s\n", webPaCfg.oldFirmwareVersion);
+				WalInfo("oldFirmwareVersion : %s\n", webPaCfg.oldFirmwareVersion);
 			}
 			else
 			{
@@ -857,7 +857,7 @@ static void *notifyTask(void *status)
 	setInitialNotify();
 	handleNotificationEvents();
 	WAL_FREE(status);
-	WalPrint("notifyTask ended!\n");
+	WalInfo("notifyTask ended!\n");
 	return NULL;
 }
 
@@ -1128,7 +1128,7 @@ void processNotification(NotifyData *notifyData)
 	char *reason = NULL;
 
 	snprintf(device_id, sizeof(device_id), "mac:%s", deviceMAC);
-	WalPrint("Device_id %s\n", device_id);
+	WalInfo("Device_id %s\n", device_id);
 
 	cJSON_AddStringToObject(notifyPayload, "device_id", device_id);
 
@@ -1162,7 +1162,7 @@ void processNotification(NotifyData *notifyData)
 
 	        	case FACTORY_RESET:
 	        	{
-	        		WalPrint("----- Inside FACTORY_RESET type -----\n");
+	        		WalInfo("----- Inside FACTORY_RESET type -----\n");
 
 	        		strcpy(dest, "event:SYNC_NOTIFICATION");
 
@@ -1173,7 +1173,7 @@ void processNotification(NotifyData *notifyData)
 	        			free(dest);
 	        			return;
 	        		}
-	        		WalPrint("Framing notifyPayload for Factory reset\n");
+	        		WalInfo("Framing notifyPayload for Factory reset\n");
 	        		cJSON_AddNumberToObject(notifyPayload, "cmc", cmc);
 	        		cJSON_AddStringToObject(notifyPayload, "cid", cid);
 				cJSON_AddStringToObject(notifyPayload, "reboot_reason", (NULL != reboot_reason) ? reboot_reason : "NULL");
@@ -1182,7 +1182,7 @@ void processNotification(NotifyData *notifyData)
 
 	        	case FIRMWARE_UPGRADE:
 	        		{
-	        			WalPrint("----- Inside FIRMWARE_UPGRADE type -----\n");
+	        			WalInfo("----- Inside FIRMWARE_UPGRADE type -----\n");
 
 	        			strcpy(dest, "event:SYNC_NOTIFICATION");
 
@@ -1202,7 +1202,7 @@ void processNotification(NotifyData *notifyData)
 
 	        	case CONNECTED_CLIENT_NOTIFY:
 	        	{
-	        		WalPrint("Processing connected client notification\n");
+	        		WalInfo("Processing connected client notification\n");
 	        		processConnectedClientNotification(notifyData->u.node, device_id,
 	        				&version, &nodeMacId, &timeStamp, &dest);
 
@@ -1373,14 +1373,14 @@ static WDMP_STATUS processParamNotification(ParamNotify *paramNotify,
  */
 void processDeviceStatusNotification(int status)
 {
-	WalPrint("processDeviceStatusNotification\n");
+	WalInfo("processDeviceStatusNotification\n");
 	NotifyData *notifyData = (NotifyData *)malloc(sizeof(NotifyData));
 	memset(notifyData,0,sizeof(NotifyData));
 
 	notifyData->type = DEVICE_STATUS;
 	notifyData->u.device = (DeviceStatus*) malloc(sizeof(DeviceStatus));
 	notifyData->u.device->status = status;
-	WalPrint("notifyData->u.device->status : %d\n",notifyData->u.device->status);
+	WalInfo("notifyData->u.device->status : %d\n",notifyData->u.device->status);
 	processNotification(notifyData);
 }
 

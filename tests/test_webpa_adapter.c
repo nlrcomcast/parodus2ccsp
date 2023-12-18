@@ -22,6 +22,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <rbus/rbus.h>
+#include <string.h>
 
 #include "../source/include/webpa_adapter.h"
 #include <cimplog/cimplog.h>
@@ -84,10 +85,12 @@ void addRowTable(char *objectName, TableData *list,char **retObject, WDMP_STATUS
     UNUSED(objectName); UNUSED(list); UNUSED(retObject); UNUSED(retStatus);
     function_called();
 }
+
 void deleteRowTable(char *object,WDMP_STATUS *retStatus)
 {
-    UNUSED(object); UNUSED(retStatus);
-    function_called();
+    UNUSED(object); 
+    retStatus = WDMP_SUCCESS;
+
 }
 
 void replaceTable(char *objectName,TableData * list,unsigned int paramcount,WDMP_STATUS *retStatus)
@@ -236,7 +239,37 @@ void test_processRequest_WildcardsGet()
     }
     cJSON_Delete(response);
 }
+/*
+void test_processRequest_delete_row()
+{
+    char *reqPayload = "{ \"row\":\"Device.DeviceInfo.Webpa.\",\"command\": \"DELETE_ROW\"}";
+    char *transactionId = "aasfsdfgehhdysy";
+    char *resPayload = NULL;    
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
+    processRequest(reqPayload, transactionId, &resPayload, req_headers, res_headers);
+    WalInfo("resPayload : %s\n",resPayload);    
+    if(resPayload !=NULL)
+    {
+	    free(resPayload);
+    }
+}
 
+void test_processRequest_add_row()
+{
+    char *reqPayload = "{ \"row\":{\"DeviceName\":\"Device1\",\"MacAddress\":\"12:2:3:5:11\"},\"table\":\"Device.DeviceInfo.Webpa.\",\"command\": \"ADD_ROW\"}";
+    char *transactionId = "aasfsdfgehhdysy";
+    char *resPayload = NULL;    
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
+    processRequest(reqPayload, transactionId, &resPayload, req_headers, res_headers);
+    WalInfo("resPayload : %s\n",resPayload);    
+    if(resPayload !=NULL)
+    {
+	    free(resPayload);
+    }    
+} 
+*/
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -246,6 +279,8 @@ int main(void)
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_processRequest_singleGet),
         cmocka_unit_test(test_processRequest_WildcardsGet),
+        // cmocka_unit_test(test_processRequest_delete_row),
+        // cmocka_unit_test(test_processRequest_add_row),           
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

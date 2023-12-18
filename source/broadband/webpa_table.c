@@ -36,9 +36,9 @@ void addRowTable(char *objectName, TableData *list,char **retObject, WDMP_STATUS
     char dbusPath[MAX_PARAMETERNAME_LEN/2] = { 0 };
     char tempParamName[MAX_PARAMETERNAME_LEN] = { 0 };
 
-    WalPrint("objectName : %s\n",objectName);
+    WalInfo("objectName : %s\n",objectName);
     walStrncpy(paramName,objectName,sizeof(paramName));
-    WalPrint("paramName before mapping : %s\n",paramName);
+    WalInfo("paramName before mapping : %s\n",paramName);
     status=IndexMpa_WEBPAtoCPE(paramName);
     if(status == -1)
     {
@@ -55,24 +55,24 @@ void addRowTable(char *objectName, TableData *list,char **retObject, WDMP_STATUS
     }
     else
     {
-        WalPrint("paramName after mapping : %s\n",paramName);
+        WalInfo("paramName after mapping : %s\n",paramName);
         ret = addRow(paramName,compName,dbusPath,&index);
-        WalPrint("ret = %d index :%d\n",ret,index);
-        WalPrint("parameterName: %s, CompName : %s, dbusPath : %s\n", paramName, compName, dbusPath);
+        WalInfo("ret = %d index :%d\n",ret,index);
+        WalInfo("parameterName: %s, CompName : %s, dbusPath : %s\n", paramName, compName, dbusPath);
         if(ret == CCSP_SUCCESS)
         {
-            WalPrint("paramName : %s index : %d\n",paramName,index);
+            WalInfo("paramName : %s index : %d\n",paramName,index);
             snprintf(tempParamName,MAX_PARAMETERNAME_LEN,"%s%d.", paramName, index);
-            WalPrint("tempParamName : %s\n",tempParamName);
+            WalInfo("tempParamName : %s\n",tempParamName);
             retUpdate = updateRow(tempParamName,list,compName,dbusPath);
             if(retUpdate == CCSP_SUCCESS)
             {
                 strcpy(*retObject, tempParamName);
-                WalPrint("retObject : %s\n",*retObject);
-                WalPrint("Table is updated successfully\n");
-                WalPrint("retObject before mapping :%s\n",*retObject);
+                WalInfo("retObject : %s\n",*retObject);
+                WalInfo("Table is updated successfully\n");
+                WalInfo("retObject before mapping :%s\n",*retObject);
                 IndexMpa_CPEtoWEBPA(retObject);
-                WalPrint("retObject after mapping :%s\n",*retObject);
+                WalInfo("retObject after mapping :%s\n",*retObject);
             }
             else
             {
@@ -95,18 +95,18 @@ void addRowTable(char *objectName, TableData *list,char **retObject, WDMP_STATUS
             WalError("Failed to add table\n");
         }
     }
-    WalPrint("ret : %d\n",ret);
+    WalInfo("ret : %d\n",ret);
     *retStatus = mapStatus(ret);
-    WalPrint("retStatus : %d\n",*retStatus);
+    WalInfo("retStatus : %d\n",*retStatus);
 }
 
 void deleteRowTable(char *object,WDMP_STATUS *retStatus)
 {
     int ret = 0,status = 0;
     char paramName[MAX_PARAMETERNAME_LEN] = { 0 };
-    WalPrint("object : %s\n",object);
+    WalInfo("object : %s\n",object);
     walStrncpy(paramName,object,sizeof(paramName));
-    WalPrint("paramName before mapping : %s\n",paramName);
+    WalInfo("paramName before mapping : %s\n",paramName);
     status=IndexMpa_WEBPAtoCPE(paramName);
     if(status == -1)
     {
@@ -125,11 +125,11 @@ void deleteRowTable(char *object,WDMP_STATUS *retStatus)
     }
     else
     {
-        WalPrint("paramName after mapping : %s\n",paramName);
+        WalInfo("paramName after mapping : %s\n",paramName);
         ret = deleteRow(paramName);
         if(ret == CCSP_SUCCESS)
         {
-            WalPrint("%s is deleted Successfully.\n", paramName);
+            WalInfo("%s is deleted Successfully.\n", paramName);
         }
         else
         {
@@ -150,11 +150,11 @@ int addRow(char *object,char *compName,char *dbusPath,int *retIndex)
 #endif
     snprintf(dst_pathname_cr, sizeof(dst_pathname_cr),"%s%s", l_Subsystem, CCSP_DBUS_INTERFACE_CR);	
 
-    WalPrint("<==========start of addRow ========>\n ");
+    WalInfo("<==========start of addRow ========>\n ");
 
     ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle, dst_pathname_cr, object, l_Subsystem, &ppComponents, &size);
 
-    WalPrint("size : %d, ret : %d\n",size,ret);
+    WalInfo("size : %d, ret : %d\n",size,ret);
 
     if (ret == CCSP_SUCCESS && size == 1)
     {
@@ -171,19 +171,19 @@ int addRow(char *object,char *compName,char *dbusPath,int *retIndex)
     }
     WalInfo("parameterName: %s, CompName : %s, dbusPath : %s\n", object, compName, dbusPath);
     ret = CcspBaseIf_AddTblRow(bus_handle, compName, dbusPath, 0, object, &index);
-    WalPrint("ret = %d index : %d\n",ret,index);    
+    WalInfo("ret = %d index : %d\n",ret,index);    
     if ( ret == CCSP_SUCCESS )
     {
-        WalPrint("Execution succeed.\n");
+        WalInfo("Execution succeed.\n");
         WalInfo("%s%d. is added.\n", object, index);               
         *retIndex = index;
-        WalPrint("retIndex : %d\n",*retIndex);               
+        WalInfo("retIndex : %d\n",*retIndex);               
     }
     else
     {
         WalError("Execution fail ret :%d\n", ret);
     }
-    WalPrint("<==========End of addRow ========>\n ");
+    WalInfo("<==========End of addRow ========>\n ");
     return ret;
 }
 
@@ -196,9 +196,9 @@ int updateRow(char *objectName,TableData *list,char *compName,char *dbusPath)
     parameterValStruct_t *val= NULL;
     parameterValStruct_t **parameterval = NULL;
 
-    WalPrint("<==========Start of updateRow ========>\n ");
+    WalInfo("<==========Start of updateRow ========>\n ");
     numParam = list->paramCnt;
-    WalPrint("numParam : %d\n",numParam);
+    WalInfo("numParam : %d\n",numParam);
     parameterNamesLocal = (char **) malloc(sizeof(char *) * numParam);
     memset(parameterNamesLocal,0,(sizeof(char *) * numParam));        
     val = (parameterValStruct_t*) malloc(sizeof(parameterValStruct_t) * numParam);
@@ -206,31 +206,30 @@ int updateRow(char *objectName,TableData *list,char *compName,char *dbusPath)
     for(i =0; i<numParam; i++)
     {
         parameterNamesLocal[i] = (char *) malloc(sizeof(char ) * MAX_PARAMETERNAME_LEN);
-        WalPrint("list->names[%d] : %s\n",i,list->names[i]);
+        WalInfo("list->names[%d] : %s\n",i,list->names[i]);
         snprintf(parameterNamesLocal[i],MAX_PARAMETERNAME_LEN,"%s%s", objectName,list->names[i]);
-        WalPrint("parameterNamesLocal[%d] : %s\n",i,parameterNamesLocal[i]);
+        WalInfo("parameterNamesLocal[%d] : %s\n",i,parameterNamesLocal[i]);
     }
 
     WalInfo("parameterName: %s, CompName : %s, dbusPath : %s\n", parameterNamesLocal[0], compName, dbusPath);
 
     // To get dataType of parameter do bulk GET for all the input parameters in the requests
     retGet = CcspBaseIf_getParameterValues(bus_handle, compName, dbusPath, parameterNamesLocal, numParam, &val_size, &parameterval);
-    WalPrint("After GPV ret: %d, val_size: %d\n",retGet,val_size);
+    WalInfo("After GPV ret: %d, val_size: %d\n",retGet,val_size);
     if(retGet == CCSP_SUCCESS && val_size > 0)
     {
-        WalPrint("val_size : %d, numParam %d\n",val_size, numParam);
+        WalInfo("val_size : %d, numParam %d\n",val_size, numParam);
         for(i =0; i<numParam; i++)
         {
-            WalPrint("parameterval[i]->parameterName %s, parameterval[i]->parameterValue %s, parameterval[i]->type %d\n",parameterval[i]->parameterName, parameterval[i]->parameterValue, parameterval[i]->type);
+            WalInfo("parameterval[i]->parameterName %s, parameterval[i]->parameterValue %s, parameterval[i]->type %d\n",parameterval[i]->parameterName, parameterval[i]->parameterValue, parameterval[i]->type);
             val[i].parameterName = parameterNamesLocal[i];
-            WalPrint("list->values[%d] : %s\n",i,list->values[i]);
+            WalInfo("list->values[%d] : %s\n",i,list->values[i]);
             val[i].parameterValue = list->values[i];
             val[i].type = parameterval[i]->type;	
         }
         free_parameterValStruct_t (bus_handle, val_size, parameterval);
-
         ret = CcspBaseIf_setParameterValues(bus_handle, compName, dbusPath, 0, writeID, val, numParam, TRUE, &faultParam);
-        WalPrint("ret : %d\n",ret);
+        WalInfo("ret : %d\n",ret);
         if((ret != CCSP_SUCCESS) && (faultParam != NULL))
         {
             WAL_FREE(faultParam);
@@ -252,7 +251,7 @@ int updateRow(char *objectName,TableData *list,char *compName,char *dbusPath)
     }
     WAL_FREE(parameterNamesLocal);
     WAL_FREE(val);
-    WalPrint("<==========End of updateRow ========>\n ");
+    WalInfo("<==========End of updateRow ========>\n ");
     return ret;
 }
 
@@ -269,10 +268,10 @@ int deleteRow(char *object)
 #endif
     snprintf(dst_pathname_cr, sizeof(dst_pathname_cr),"%s%s", l_Subsystem, CCSP_DBUS_INTERFACE_CR);
 
-    WalPrint("<==========Start of deleteRow ========>\n ");
+    WalInfo("<==========Start of deleteRow ========>\n ");
 
     ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle, dst_pathname_cr, object, l_Subsystem, &ppComponents, &size);
-    WalPrint("size : %d, ret : %d\n",size,ret);
+    WalInfo("size : %d, ret : %d\n",size,ret);
 
     if (ret == CCSP_SUCCESS && size == 1)
     {
@@ -289,16 +288,16 @@ int deleteRow(char *object)
     }
     WalInfo("parameterName: %s, CompName : %s, dbusPath : %s\n", object, compName, dbusPath);
     ret = CcspBaseIf_DeleteTblRow(bus_handle, compName, dbusPath, 0, object);
-    WalPrint("ret = %d\n",ret);    
+    WalInfo("ret = %d\n",ret);    
     if ( ret == CCSP_SUCCESS )
     {
-        WalPrint("Execution succeed.\n");
+        WalInfo("Execution succeed.\n");
         WalInfo("%s is deleted.\n", object);
     }
     else
     {
         WalError("Execution fail ret :%d\n", ret);
     }
-    WalPrint("<==========End of deleteRow ========>\n ");
+    WalInfo("<==========End of deleteRow ========>\n ");
     return ret;
 }

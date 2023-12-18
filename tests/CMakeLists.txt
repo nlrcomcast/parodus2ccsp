@@ -46,6 +46,14 @@ target_link_libraries (test_webpa_adapter -lwrp-c -ldbus-1 -lccsp_common -lwdmp-
 target_link_libraries (test_webpa_adapter gcov -Wl,--no-as-needed )
 
 #-------------------------------------------------------------------------------
+#   test_webpa_adapter1
+#-------------------------------------------------------------------------------
+add_test(NAME test_webpa_adapter1 COMMAND ${MEMORY_CHECK} ./test_webpa_adapter1)
+add_executable(test_webpa_adapter1 test_webpa_adapter1.c mock_stack.c mock_cache.c  ../source/broadband/webpa_adapter.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+target_link_libraries (test_webpa_adapter1 -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
+target_link_libraries (test_webpa_adapter1 gcov -Wl,--no-as-needed )
+
+#-------------------------------------------------------------------------------
 #   test_webpa_get
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_get COMMAND ${MEMORY_CHECK} ./test_webpa_get)
