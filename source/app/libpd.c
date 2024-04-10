@@ -153,7 +153,8 @@ static void parodus_receive()
         char *contentType = NULL;
         char *sourceService, *sourceApplication =NULL;
         char *status=NULL;
-
+		FILE *file;
+		int n=0;
         rtn = libparodus_receive (current_instance, &wrp_msg, 2000);
         if (rtn == 1)
         {
@@ -167,7 +168,37 @@ static void parodus_receive()
                 sleep(5);
                 return;
         }
+		
+	if((file = fopen("/tmp/hardcode_trace", "r")) != NULL) {
+		   WalInfo("/tmp/hardcode_trace file exists, so hardcode the traceContext value in wrp request header\n");
+		   headers_t *headers;
+                   headers = (headers_t *)malloc(sizeof(headers_t));
+		   if(headers != NULL) {
+                            headers->count = 2;
+                            char *arr[5][2] ={ {"traceparent: 00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01", "tracestate: rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"}, 
+			                       {"00-foo-bar-02", "congo=t71WcgMhu"},
+				               {"traceparent: 00-foo-bar-03", "tracestate: rojo=00g078bboab89e45"},
+		                               {"00-foo-bar-04", "congo=s81RgtNji"},
+		                               {"traceparent: 00-foo-bar-05", "tracestate: congo=00k056ccc0tu34d56"} };
+                            for( int cnt = 0; cnt < headers->count; cnt++ ) {
+                            headers->headers[cnt] = strdup(arr[n][cnt]);
+                            }
+                            fclose(file); 
+                            n++;
+		            if(n>4) {
+		                n = 0;
+		            }	   
+                            wrp_msg->u.req.headers = headers;
 
+                            WalInfo("The request wrp_msg header fields\n");
+                            WalInfo("req header count in wrp_msg - %d\n", wrp_msg->u.req.headers->count);
+                            WalInfo("req header 0 in wrp_msg - %s\n", wrp_msg->u.req.headers->headers[0]);
+                            WalInfo("req header 1 in wrp_msg - %s\n", wrp_msg->u.req.headers->headers[1]);
+		   }
+		   else {
+			   WalError("Memory not allocated for headers\n");
+	           }		   
+        }
         if(wrp_msg != NULL)
         {
             if (wrp_msg->msg_type == WRP_MSG_TYPE__REQ)
@@ -181,10 +212,10 @@ static void parodus_receive()
                         getCurrentTime(startPtr);
 			headers_t *res_headers = NULL;
 			if(wrp_msg->u.req.headers != NULL) {
-				WalPrint("Allocating memory for response headers\n");
+				WalInfo("Allocating memory for response headers\n");
                         	res_headers = (headers_t *)malloc(sizeof(headers_t) + sizeof( char * ) * (wrp_msg->u.req.headers->count));
 				if(res_headers != NULL) {
-					WalPrint("Memory allocated successfully for response headers\n");
+					WalInfo("Memory allocated successfully for response headers\n");
 					memset(res_headers, 0, sizeof(headers_t));
 				}
 				else {
@@ -193,7 +224,7 @@ static void parodus_receive()
 				}	
 			}
 			else {
-                                WalPrint("Request headers field is empty so, Memory not allocated for response headers\n");
+                                WalInfo("Request headers field is empty so, Memory not allocated for response headers\n");
                         }
 			processRequest((char *)wrp_msg->u.req.payload, wrp_msg->u.req.transaction_uuid, ((char **)(&(res_wrp_msg->u.req.payload))), wrp_msg->u.req.headers, res_headers);
 			if(res_headers != NULL && res_headers->headers[0] != NULL && res_headers->headers[1] != NULL) {
