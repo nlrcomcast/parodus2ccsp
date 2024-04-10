@@ -179,7 +179,7 @@ static void parodus_receive()
 				WalPrint("Allocating memory for response headers\n");
                         	res_headers = (headers_t *)malloc(sizeof(headers_t) + sizeof( char * ) * (wrp_msg->u.req.headers->count));
 				if(res_headers != NULL) {
-					WalPrint("Memory allocated successfully for response headers\n");
+					WalInfo("Memory allocated successfully for response headers\n");
 					memset(res_headers, 0, sizeof(headers_t));
 				}
 				else {
@@ -188,10 +188,12 @@ static void parodus_receive()
 				}	
 			}
 			else {
-                                WalPrint("Request headers field is empty so, Memory not allocated for response headers\n");
+                                WalInfo("Request headers field is empty so, Memory not allocated for response headers\n");
                         }
 			processRequest((char *)wrp_msg->u.req.payload, wrp_msg->u.req.transaction_uuid, ((char **)(&(res_wrp_msg->u.req.payload))), wrp_msg->u.req.headers, res_headers);
 			if(res_headers != NULL && res_headers->headers[0] != NULL && res_headers->headers[1] != NULL) {
+				WalInfo("res headers0 %s\n", res_headers->headers[0]);
+				WalInfo("res headers1 %s\n", res_headers->headers[1]);				
                                 if(strlen(res_headers->headers[0]) > 0 && strlen(res_headers->headers[1]) > 0) {
                                           res_headers->count = wrp_msg->u.req.headers->count;
                                           res_wrp_msg->u.req.headers = res_headers;
@@ -206,7 +208,7 @@ static void parodus_receive()
 		
                         if(res_wrp_msg->u.req.payload !=NULL)
                         {   
-                                WalPrint("Response payload is %s\n",(char *)(res_wrp_msg->u.req.payload));
+                                WalInfo("Response payload is %s\n",(char *)(res_wrp_msg->u.req.payload));
                                 res_wrp_msg->u.req.payload_size = strlen(res_wrp_msg->u.req.payload);
                         }
                         res_wrp_msg->msg_type = wrp_msg->msg_type;
@@ -228,7 +230,7 @@ static void parodus_receive()
                             res_wrp_msg->u.req.content_type = contentType;
                         }
                         int sendStatus = libparodus_send(current_instance, res_wrp_msg);
-                        WalPrint("sendStatus is %d\n",sendStatus);
+                        WalInfo("sendStatus is %d\n",sendStatus);
                         if(sendStatus == 0)
                         {
                                 WalInfo("Sent message successfully to parodus\n");

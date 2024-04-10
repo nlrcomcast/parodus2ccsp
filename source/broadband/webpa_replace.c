@@ -41,9 +41,9 @@ void replaceTable(char *objectName,TableData * list,unsigned int paramcount,WDMP
     char **deleteList = NULL;
     TableData * addList = NULL;
     char paramName[MAX_PARAMETERNAME_LEN] = {'\0'};
-    WalPrint("<==========Start of replaceTable ========>\n ");
+    WalInfo("<==========Start of replaceTable ========>\n ");
     walStrncpy(paramName,objectName,sizeof(paramName));
-    WalPrint("paramName before Mapping : %s\n",paramName);
+    WalInfo("paramName before Mapping : %s\n",paramName);
     // Index mapping 
     retIndex=IndexMpa_WEBPAtoCPE(paramName);
     if(retIndex == -1)
@@ -63,18 +63,18 @@ void replaceTable(char *objectName,TableData * list,unsigned int paramcount,WDMP
     }
     else
     {
-        WalPrint("paramName after mapping : %s\n",paramName);
+        WalInfo("paramName after mapping : %s\n",paramName);
         ret = cacheTableData(paramName,paramcount,&deleteList,&rowCount,&numParams,&addList);
-        WalPrint("ret : %d rowCount %d numParams: %d\n",ret,rowCount,numParams);
+        WalInfo("ret : %d rowCount %d numParams: %d\n",ret,rowCount,numParams);
 	if(ret == CCSP_SUCCESS && numParams > 0)
         {
             WalInfo("Table (%s) has %d rows",paramName,rowCount);
             if(rowCount > 0)
             {
-                WalPrint("-------- Printing table data ----------\n");
+                WalInfo("-------- Printing table data ----------\n");
                 for(cnt =0; cnt < rowCount; cnt++)
                 {	
-                    WalPrint("deleteList[%d] : %s\n",cnt,deleteList[cnt]);
+                    WalInfo("deleteList[%d] : %s\n",cnt,deleteList[cnt]);
                     if(paramcount != 0)
                     {
                         WalPrint("addList[%d].paramCnt : %d\n",cnt,addList[cnt].paramCnt);
@@ -138,8 +138,8 @@ void replaceTable(char *objectName,TableData * list,unsigned int paramcount,WDMP
     {
         *retStatus = mapStatus(ret);
     }
-    WalPrint("Finally ----> ret: %d retStatus : %d\n",ret,*retStatus);
-    WalPrint("<==========End of replaceTable ========>\n ");
+    WalInfo("Finally ----> ret: %d retStatus : %d\n",ret,*retStatus);
+    WalInfo("<==========End of replaceTable ========>\n ");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -257,11 +257,11 @@ static int cacheTableData(char *objectName,int paramcount,char ***rowList,int *n
 static void deleteAllTableData(char **deleteList,int rowCount)
 {
     int cnt =0, delRet = 0; 
-    WalPrint("---------- Start of deleteAllTableData -----------\n");
+    WalInfo("---------- Start of deleteAllTableData -----------\n");
     for(cnt =0; cnt < rowCount; cnt++)
     {	
         delRet = deleteRow(deleteList[cnt]);
-        WalPrint("delRet: %d\n",delRet);
+        WalInfo("delRet: %d\n",delRet);
         if(delRet != CCSP_SUCCESS)
         {
             WalError("deleteList[%d] :%s failed to delete\n",cnt,deleteList[cnt]);
@@ -269,7 +269,7 @@ static void deleteAllTableData(char **deleteList,int rowCount)
         WAL_FREE(deleteList[cnt]);
     }
     WAL_FREE(deleteList); 
-    WalPrint("---------- End of deleteAllTableData -----------\n");
+    WalInfo("---------- End of deleteAllTableData -----------\n");
 }
 
 /**

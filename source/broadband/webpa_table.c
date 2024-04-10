@@ -36,9 +36,9 @@ void addRowTable(char *objectName, TableData *list,char **retObject, WDMP_STATUS
     char dbusPath[MAX_PARAMETERNAME_LEN/2] = { 0 };
     char tempParamName[MAX_PARAMETERNAME_LEN] = { 0 };
 
-    WalPrint("objectName : %s\n",objectName);
+    WalInfo("objectName : %s\n",objectName);
     walStrncpy(paramName,objectName,sizeof(paramName));
-    WalPrint("paramName before mapping : %s\n",paramName);
+    WalInfo("paramName before mapping : %s\n",paramName);
     status=IndexMpa_WEBPAtoCPE(paramName);
     if(status == -1)
     {
@@ -55,24 +55,24 @@ void addRowTable(char *objectName, TableData *list,char **retObject, WDMP_STATUS
     }
     else
     {
-        WalPrint("paramName after mapping : %s\n",paramName);
+        WalInfo("paramName after mapping : %s\n",paramName);
         ret = addRow(paramName,compName,dbusPath,&index);
-        WalPrint("ret = %d index :%d\n",ret,index);
-        WalPrint("parameterName: %s, CompName : %s, dbusPath : %s\n", paramName, compName, dbusPath);
+        WalInfo("ret = %d index :%d\n",ret,index);
+        WalInfo("parameterName: %s, CompName : %s, dbusPath : %s\n", paramName, compName, dbusPath);
         if(ret == CCSP_SUCCESS)
         {
-            WalPrint("paramName : %s index : %d\n",paramName,index);
+            WalInfo("paramName : %s index : %d\n",paramName,index);
             snprintf(tempParamName,MAX_PARAMETERNAME_LEN,"%s%d.", paramName, index);
-            WalPrint("tempParamName : %s\n",tempParamName);
+            WalInfo("tempParamName : %s\n",tempParamName);
             retUpdate = updateRow(tempParamName,list,compName,dbusPath);
             if(retUpdate == CCSP_SUCCESS)
             {
                 strcpy(*retObject, tempParamName);
-                WalPrint("retObject : %s\n",*retObject);
-                WalPrint("Table is updated successfully\n");
-                WalPrint("retObject before mapping :%s\n",*retObject);
+                WalInfo("retObject : %s\n",*retObject);
+                WalInfo("Table is updated successfully\n");
+                WalInfo("retObject before mapping :%s\n",*retObject);
                 IndexMpa_CPEtoWEBPA(retObject);
-                WalPrint("retObject after mapping :%s\n",*retObject);
+                WalInfo("retObject after mapping :%s\n",*retObject);
             }
             else
             {
@@ -95,18 +95,18 @@ void addRowTable(char *objectName, TableData *list,char **retObject, WDMP_STATUS
             WalError("Failed to add table\n");
         }
     }
-    WalPrint("ret : %d\n",ret);
+    WalInfo("ret : %d\n",ret);
     *retStatus = mapStatus(ret);
-    WalPrint("retStatus : %d\n",*retStatus);
+    WalInfo("retStatus : %d\n",*retStatus);
 }
 
 void deleteRowTable(char *object,WDMP_STATUS *retStatus)
 {
     int ret = 0,status = 0;
     char paramName[MAX_PARAMETERNAME_LEN] = { 0 };
-    WalPrint("object : %s\n",object);
+    WalInfo("object : %s\n",object);
     walStrncpy(paramName,object,sizeof(paramName));
-    WalPrint("paramName before mapping : %s\n",paramName);
+    WalInfo("paramName before mapping : %s\n",paramName);
     status=IndexMpa_WEBPAtoCPE(paramName);
     if(status == -1)
     {
@@ -125,11 +125,11 @@ void deleteRowTable(char *object,WDMP_STATUS *retStatus)
     }
     else
     {
-        WalPrint("paramName after mapping : %s\n",paramName);
+        WalInfo("paramName after mapping : %s\n",paramName);
         ret = deleteRow(paramName);
         if(ret == CCSP_SUCCESS)
         {
-            WalPrint("%s is deleted Successfully.\n", paramName);
+            WalInfo("%s is deleted Successfully.\n", paramName);
         }
         else
         {
@@ -150,11 +150,11 @@ int addRow(char *object,char *compName,char *dbusPath,int *retIndex)
 #endif
     snprintf(dst_pathname_cr, sizeof(dst_pathname_cr),"%s%s", l_Subsystem, CCSP_DBUS_INTERFACE_CR);	
 
-    WalPrint("<==========start of addRow ========>\n ");
+    WalInfo("<==========start of addRow ========>\n ");
 
     ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle, dst_pathname_cr, object, l_Subsystem, &ppComponents, &size);
 
-    WalPrint("size : %d, ret : %d\n",size,ret);
+    WalInfo("size : %d, ret : %d\n",size,ret);
 
     if (ret == CCSP_SUCCESS && size == 1)
     {
@@ -171,19 +171,19 @@ int addRow(char *object,char *compName,char *dbusPath,int *retIndex)
     }
     WalInfo("parameterName: %s, CompName : %s, dbusPath : %s\n", object, compName, dbusPath);
     ret = CcspBaseIf_AddTblRow(bus_handle, compName, dbusPath, 0, object, &index);
-    WalPrint("ret = %d index : %d\n",ret,index);    
+    WalInfo("ret = %d index : %d\n",ret,index);    
     if ( ret == CCSP_SUCCESS )
     {
-        WalPrint("Execution succeed.\n");
+        WalInfo("Execution succeed.\n");
         WalInfo("%s%d. is added.\n", object, index);               
         *retIndex = index;
-        WalPrint("retIndex : %d\n",*retIndex);               
+        WalInfo("retIndex : %d\n",*retIndex);               
     }
     else
     {
         WalError("Execution fail ret :%d\n", ret);
     }
-    WalPrint("<==========End of addRow ========>\n ");
+    WalInfo("<==========End of addRow ========>\n ");
     return ret;
 }
 
@@ -269,10 +269,10 @@ int deleteRow(char *object)
 #endif
     snprintf(dst_pathname_cr, sizeof(dst_pathname_cr),"%s%s", l_Subsystem, CCSP_DBUS_INTERFACE_CR);
 
-    WalPrint("<==========Start of deleteRow ========>\n ");
+    WalInfo("<==========Start of deleteRow ========>\n ");
 
     ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle, dst_pathname_cr, object, l_Subsystem, &ppComponents, &size);
-    WalPrint("size : %d, ret : %d\n",size,ret);
+    WalInfo("size : %d, ret : %d\n",size,ret);
 
     if (ret == CCSP_SUCCESS && size == 1)
     {
@@ -289,7 +289,7 @@ int deleteRow(char *object)
     }
     WalInfo("parameterName: %s, CompName : %s, dbusPath : %s\n", object, compName, dbusPath);
     ret = CcspBaseIf_DeleteTblRow(bus_handle, compName, dbusPath, 0, object);
-    WalPrint("ret = %d\n",ret);    
+    WalInfo("ret = %d\n",ret);    
     if ( ret == CCSP_SUCCESS )
     {
         WalPrint("Execution succeed.\n");
@@ -299,6 +299,6 @@ int deleteRow(char *object)
     {
         WalError("Execution fail ret :%d\n", ret);
     }
-    WalPrint("<==========End of deleteRow ========>\n ");
+    WalInfo("<==========End of deleteRow ========>\n ");
     return ret;
 }
