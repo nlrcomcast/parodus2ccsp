@@ -149,7 +149,7 @@ static void parodus_receive()
         char *sourceService, *sourceApplication =NULL;
         char *status=NULL;
 		FILE *file;
-		int n=0;
+		static int n=0;
         rtn = libparodus_receive (current_instance, &wrp_msg, 2000);
         if (rtn == 1)
         {
@@ -164,6 +164,13 @@ static void parodus_receive()
                 return;
         }
 
+
+
+	if(wrp_msg != NULL)
+        {
+            if (wrp_msg->msg_type == WRP_MSG_TYPE__REQ)
+            {
+                    res_wrp_msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
 	if((file = fopen("/tmp/hardcode_trace", "r")) != NULL) {
 		   WalInfo("/tmp/hardcode_trace file exists, so hardcode the traceContext value in wrp request header\n");
 		   headers_t *headers;
@@ -193,14 +200,7 @@ static void parodus_receive()
 		   else {
 			   WalError("Memory not allocated for headers\n");
 	           }		   
-        }
-
-	if(wrp_msg != NULL)
-        {
-            if (wrp_msg->msg_type == WRP_MSG_TYPE__REQ)
-            {
-                    res_wrp_msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
-                    
+        }                    
 
                     if(res_wrp_msg != NULL)
                     {
@@ -212,7 +212,7 @@ static void parodus_receive()
                         	res_headers = (headers_t *)malloc(sizeof(headers_t) + sizeof( char * ) * (wrp_msg->u.req.headers->count));
 				if(res_headers != NULL) {
 					WalInfo("Memory allocated successfully for response headers\n");
-					memset(res_headers, 0, sizeof(headers_t));
+					memset(res_headers, 0, (sizeof(headers_t) + sizeof( char * ) * (wrp_msg->u.req.headers->count)));
 				}
 				else {
 					WalError("Memory not allocated for response headers\n");
@@ -222,7 +222,9 @@ static void parodus_receive()
 			else {
                                 WalInfo("Request headers field is empty so, Memory not allocated for response headers\n");
                         }
+ 			WalInfo("************** processRequest *****************\n");				    
 			processRequest((char *)wrp_msg->u.req.payload, wrp_msg->u.req.transaction_uuid, ((char **)(&(res_wrp_msg->u.req.payload))), wrp_msg->u.req.headers, res_headers);
+			WalInfo("************** processedRequest *****************\n");			    
 			if(res_headers != NULL && res_headers->headers[0] != NULL && res_headers->headers[1] != NULL) {
 				WalInfo("res headers0 %s\n", res_headers->headers[0]);
 				WalInfo("res headers1 %s\n", res_headers->headers[1]);				
@@ -237,6 +239,13 @@ static void parodus_receive()
 					}
                                	}
                          }
+			 else if(res_headers != NULL)
+			 {
+				 WalInfo("Deallocating memory for response headers");
+				 free(res_headers);
+				 res_headers = NULL;
+				 WalInfo("Deallocated memory for response headers");
+			 }			    
 		
                         if(res_wrp_msg->u.req.payload !=NULL)
                         {   
@@ -275,8 +284,10 @@ static void parodus_receive()
                         getCurrentTime(endPtr);
                         WalInfo("Elapsed time : %ld ms\n", timeValDiff(startPtr, endPtr));
 			wrp_free_struct (res_wrp_msg);
+			WalInfo("Deallocated memory for res_wrp_msg");			    
                     }
 		    wrp_free_struct (wrp_msg);
+		    WalInfo("Deallocated memory for wrp_msg");			    
 	    }
 
             //handle cloud-status retrieve response received from parodus
@@ -300,6 +311,7 @@ static void parodus_receive()
 				wrp_free_struct (wrp_msg);
             }
         }
+ 	WalInfo("************** parodus_receive done *****************\n");		
 }
 
 void *parallelProcessTask(void *id)
