@@ -174,7 +174,7 @@ static void parodus_receive()
 	if((file = fopen("/tmp/hardcode_trace", "r")) != NULL) {
 		   WalInfo("/tmp/hardcode_trace file exists, so hardcode the traceContext value in wrp request header\n");
 		   headers_t *headers;
-                   headers = (headers_t *)malloc(sizeof(headers_t));
+                   headers = (headers_t *)malloc(sizeof(headers_t)+ sizeof( char * ) * 2);
 		   if(headers != NULL) {
                             headers->count = 2;
                             char *arr[5][2] ={ {"traceparent: 00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01", "tracestate: rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"}, 
