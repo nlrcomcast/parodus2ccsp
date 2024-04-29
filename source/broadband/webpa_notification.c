@@ -379,6 +379,13 @@ void ccspWebPaValueChangedCB(parameterSigStruct_t* val, int size, void* user_dat
 
 	WalInfo("Notification Event from stack: Parameter Name: %s, Data Type: %d, Change Source: %d\n", paramNotify->paramName, paramNotify->type, paramNotify->changeSource);
 
+	//To add colud status online check for WAN_IP change notification, when parodus is in offline during WAN down
+	if((strcmp(paramNotify->paramName,WAN_IPV4_PARAM) == 0)||
+		(strcmp(paramNotify->paramName,WAN_IPV6_PARAM) == 0))
+	{
+		set_wanipnotify(1);
+		WalInfo("Receved WAN_IP change notification, wanipnotify is set to one");
+	}
 	(*notifyCbFn)(notifyDataPtr);
 }
 
@@ -1127,7 +1134,8 @@ void processNotification(NotifyData *notifyData)
 	unsigned int cmc;
 	char *strBootTime = NULL;
 	char *reason = NULL;
-
+	int cld_status = 0;
+	
 	snprintf(device_id, sizeof(device_id), "mac:%s", deviceMAC);
 	WalPrint("Device_id %s\n", device_id);
 
@@ -1158,6 +1166,12 @@ void processNotification(NotifyData *notifyData)
 				//Added delay of 5s to fix wifi captive portal issue where sync notifications are sent before wifi updates the parameter values in device DB
 				WalInfo("Sleeping for 5 sec before sending SYNC_NOTIFICATION\n");
 				sleep(5);
+					if(get_wanipnotify() == 1)
+					{
+						WalInfo("Received WAN IP Notification\n");
+						cld_status = getConnCloudStatus(deviceMAC);
+						WalInfo("Received cld_status is %d\n", cld_status);
+					}
 	        	}
 	        		break;
 

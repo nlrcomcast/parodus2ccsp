@@ -77,6 +77,8 @@
 #define WEBPA_SERVER_URL             "Device.X_RDKCENTRAL-COM_Webpa.Server.URL"
 #define TOKEN_SERVER_URL             "Device.X_RDKCENTRAL-COM_Webpa.TokenServer.URL"
 #define DNS_TEXT_URL                 "Device.X_RDKCENTRAL-COM_Webpa.DNSText.URL"
+#define WAN_IPV4_PARAM               "Device.DeviceInfo.X_COMCAST-COM_WAN_IP"
+#define WAN_IPV6_PARAM               "Device.DeviceInfo.X_COMCAST-COM_WAN_IPv6"
 #if defined(_COSA_BCM_MIPS_)
 #define DEVICE_MAC                   "Device.DPoE.Mac_address"
 #elif defined(PLATFORM_RASPBERRYPI)

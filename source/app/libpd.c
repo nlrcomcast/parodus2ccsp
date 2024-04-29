@@ -45,6 +45,17 @@ char *cloud_status = "offline";
 int wakeUpFlag = 0;
 pthread_mutex_t cloud_mut=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cloud_con=PTHREAD_COND_INITIALIZER;
+static int wanipnotify = 0;
+
+int get_wanipnotify()
+{
+	return wanipnotify;
+}
+
+void set_wanipnotify(int wanip_notify)
+{
+	wanipnotify = wanip_notify;
+}
 
 static void connect_parodus()
 {
@@ -414,6 +425,8 @@ int getConnCloudStatus(char *device_mac)
 					WalPrint("retrieve content_type is %s\n",req_wrp_msg->u.crud.content_type);
 				}
 
+				if(get_wanipnotify() == 1)
+					backoff_max_time = 4; //This backoff 3,7,15s pattern only for minimal delay
 				max_retry_sleep = (int) pow(2, backoff_max_time) -1;
 				WalInfo("cloud-status max_retry_sleep is %d\n", max_retry_sleep );
 
@@ -452,6 +465,7 @@ int getConnCloudStatus(char *device_mac)
 						rv = 1;
 						free(cloud_status_val);
 						cloud_status_val = NULL;
+						set_wanipnotify(0);
 						break;
 					}
 					else
