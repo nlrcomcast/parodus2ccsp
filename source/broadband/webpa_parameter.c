@@ -71,10 +71,10 @@ void getValues(const char *paramName[], const unsigned int paramCount, int index
     ParamCompList *ParamGroup = NULL;
     char **compName = NULL;
     char **dbusPath = NULL;
-    WalInfo("------------- getValues -------------\n");
+    WalInfo(" ------------- getValues -------------\n");
     for(cnt1 = 0; cnt1 < paramCount; cnt1++)
     {
-        WalInfo("paramName[%d] : %s\n",cnt1,paramName[cnt1]);
+        WalInfo(" paramName[%d] : %s\n",cnt1,paramName[cnt1]);
         // Get the matching component index from cache
         walStrncpy(parameterName,paramName[cnt1],sizeof(parameterName));
         // To get list of component name and dbuspath
@@ -83,35 +83,35 @@ void getValues(const char *paramName[], const unsigned int paramCount, int index
         {
             break;
         }
-        WalInfo("parameterName: %s count: %d\n",parameterName,count);
+        WalInfo(" parameterName: %s count: %d\n",parameterName,count);
         for(i = 0; i < count; i++)
         {
-            WalInfo("compName[%d] : %s, dbusPath[%d] : %s\n", i,compName[i],i, dbusPath[i]);
+            WalInfo(" compName[%d] : %s, dbusPath[%d] : %s\n", i,compName[i],i, dbusPath[i]);
             prepareParamGroups(&ParamGroup,paramCount,cnt1,parameterName,compName[i],dbusPath[i],&compCount);
         }
         free_componentDetails(compName,dbusPath,count);
     }//End of for loop
 
-    WalInfo("Number of parameter groups : %d\n",compCount);
+    WalInfo(" Number of parameter groups : %d\n",compCount);
 
     if(error != 1)
     {
         isLargeWildCard = 0;
-        WalInfo("compCount : %d paramCount: %d\n",compCount,paramCount);
+        WalInfo(" compCount : %d paramCount: %d\n",compCount,paramCount);
         if(compCount > paramCount)
         {
-            WalInfo("compCount is greater than paramCount\n");
+            WalInfo(" compCount is greater than paramCount\n");
             isLargeWildCard = 1;
         }
 
         for(cnt1 = 0; cnt1 < compCount; cnt1++)
         {
-            WalInfo("------------- Parameter group -------------\n");
-            WalInfo("ParamGroup[%d].comp_name :%s, ParamGroup[%d].dbus_path :%s, ParamGroup[%d].parameterCount :%d\n",cnt1,ParamGroup[cnt1].comp_name, cnt1,ParamGroup[cnt1].dbus_path, cnt1,ParamGroup[cnt1].parameterCount);
+            WalInfo(" ------------- Parameter group -------------\n");
+            WalInfo(" ParamGroup[%d].comp_name :%s, ParamGroup[%d].dbus_path :%s, ParamGroup[%d].parameterCount :%d\n",cnt1,ParamGroup[cnt1].comp_name, cnt1,ParamGroup[cnt1].dbus_path, cnt1,ParamGroup[cnt1].parameterCount);
 
             for(cnt2 = 0; cnt2 < ParamGroup[cnt1].parameterCount; cnt2++)
             {
-                WalInfo("ParamGroup[%d].parameterName :%s\n",cnt1,ParamGroup[cnt1].parameterName[cnt2]);
+                WalInfo(" ParamGroup[%d].parameterName :%s\n",cnt1,ParamGroup[cnt1].parameterName[cnt2]);
             }
 
             if(!strcmp(ParamGroup[cnt1].comp_name,RDKB_WIFI_FULL_COMPONENT_NAME) && applySettingsFlag == TRUE) 
@@ -121,7 +121,7 @@ void getValues(const char *paramName[], const unsigned int paramCount, int index
                 OnboardLog("WiFi component is busy\n");
                 break;
             }
-            WalPrint("index: %d startIndex: %d\n",index, startIndex);
+            WalInfo(" index: %d startIndex: %d\n",index, startIndex);
 
             if(isLargeWildCard == 1)
             {
@@ -134,7 +134,7 @@ void getValues(const char *paramName[], const unsigned int paramCount, int index
                 ret = getParamValues(ParamGroup[cnt1].parameterName, ParamGroup[cnt1].parameterCount, ParamGroup[cnt1].comp_name, ParamGroup[cnt1].dbus_path, timeSpan, index, startIndex, paramArr,&retCount);
                 index = index + ParamGroup[cnt1].parameterCount;   
             }
-            WalPrint("After getParamValues index = %d ,startIndex : %d retCount =  %d\n",index,startIndex,retCount);
+            WalInfo(" After getParamValues index = %d ,startIndex : %d retCount =  %d\n",index,startIndex,retCount);
             if(ret != CCSP_SUCCESS)
             {
                 WalError("Get Atomic Values call failed for ParamGroup[%d]->comp_name :%s ret: %d\n",cnt1,ParamGroup[cnt1].comp_name,ret);
@@ -142,7 +142,7 @@ void getValues(const char *paramName[], const unsigned int paramCount, int index
                 break;
             }
             totalParams = totalParams + retCount;
-            WalPrint("totalParams : %d\n",totalParams);
+            WalInfo(" totalParams : %d\n",totalParams);
         }
     }
     retValCount[0] = totalParams;
