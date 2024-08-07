@@ -116,8 +116,8 @@ WDMP_STATUS msgBusInit(const char *pComponentName)
     AnscCopyString(g_Subsystem, "");
 #endif
 
-    if ( bRunAsDaemon ) 
-        daemonize();
+    // if ( bRunAsDaemon ) 
+    //     daemonize();
 
     cmd_dispatch('e');
 
@@ -127,7 +127,7 @@ WDMP_STATUS msgBusInit(const char *pComponentName)
     if (err != CCSP_SUCCESS)
     {
         fprintf(stderr, "Cdm_Init: %s\n", Cdm_StrError(err));
-        exit(1);
+        //exit(1);
     }
     system("touch /tmp/webpa_initialized");
 if ( bRunAsDaemon )
@@ -148,7 +148,7 @@ if ( bRunAsDaemon )
     if (err != CCSP_SUCCESS)
     {
     fprintf(stderr, "Cdm_Term: %s\n", Cdm_StrError(err));
-    exit(1);
+    //exit(1);
     }
 
     ssp_cancel();

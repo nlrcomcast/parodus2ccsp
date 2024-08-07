@@ -33,7 +33,7 @@ int main()
         int ret = -1;
 
 #ifdef INCLUDE_BREAKPAD
-    breakpad_ExceptionHandler();
+    //breakpad_ExceptionHandler();
 #else
 	signal(SIGTERM, sig_handler);
 	signal(SIGINT, sig_handler);
@@ -50,7 +50,7 @@ int main()
 #endif
 	const char *pComponentName = WEBPA_COMPONENT_NAME;
 	WalInfo("********** Starting component: %s **********\n ", pComponentName); 
-        drop_root_privilege();
+        //drop_root_privilege();
 	/* Backend Manager for Webpa Creation and Initilization 
     CosaWebpaBEManagerCreate( );*/
 	WalInfo("B4 msgBusInit\n");
