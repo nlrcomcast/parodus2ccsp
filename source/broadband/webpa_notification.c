@@ -378,7 +378,7 @@ void ccspWebPaValueChangedCB(parameterSigStruct_t* val, int size, void* user_dat
 	notifyDataPtr->u.notify = paramNotify;
 
 	WalInfo("Notification Event from stack: Parameter Name: %s, Data Type: %d, Change Source: %d\n", paramNotify->paramName, paramNotify->type, paramNotify->changeSource);
-
+	WalInfo("oldValue:%s newValue:%s\n",paramNotify->oldValue,paramNotify->newValue);
 	(*notifyCbFn)(notifyDataPtr);
 }
 
