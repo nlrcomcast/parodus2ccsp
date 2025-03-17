@@ -368,9 +368,9 @@ void ccspWebPaValueChangedCB(parameterSigStruct_t* val, int size, void* user_dat
 	}
 
 	paramNotify= (ParamNotify *) malloc(sizeof(ParamNotify));
-	paramNotify->paramName = val->parameterName;
-	paramNotify->oldValue= val->oldValue;
-	paramNotify->newValue = val->newValue;
+	paramNotify->paramName = strdup(val->parameterName);
+	paramNotify->oldValue= strdup(val->oldValue);
+	paramNotify->newValue = strdup(val->newValue);
 	paramNotify->type = val->type;
 	paramNotify->changeSource = mapWriteID(val->writeID);
 
@@ -379,6 +379,7 @@ void ccspWebPaValueChangedCB(parameterSigStruct_t* val, int size, void* user_dat
 	notifyDataPtr->u.notify = paramNotify;
 
 	WalInfo("Notification Event from stack: Parameter Name: %s, Data Type: %d, Change Source: %d\n", paramNotify->paramName, paramNotify->type, paramNotify->changeSource);
+	WalInfo("paramNotify->oldValue %s, paramNotify->newValue %s\n", paramNotify->oldValue, paramNotify->newValue);
 
 	(*notifyCbFn)(notifyDataPtr);
 }
@@ -1198,6 +1199,8 @@ void processNotification(NotifyData *notifyData)
 	        		cJSON_AddNumberToObject(notifyPayload, "cmc", cmc);
 	        		cJSON_AddStringToObject(notifyPayload, "cid", cid);
 				OnboardLog("%s/%d/%s\n",dest,cmc,cid);
+				WalInfo("processNotification: Parameter Name: %s, Data Type: %d, Change Source: %d\n", notifyData->u.notify->paramName, notifyData->u.notify->type, notifyData->u.notify->changeSource);
+				WalInfo("oldValue %s, newValue %s\n", notifyData->u.notify->oldValue, notifyData->u.notify->newValue);				
 				//Added delay of 5s to fix wifi captive portal issue where sync notifications are sent before wifi updates the parameter values in device DB
 				WalInfo("Sleeping for 5 sec before sending SYNC_NOTIFICATION\n");
 				sleep(5);
