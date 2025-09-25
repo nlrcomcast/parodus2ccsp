@@ -19,7 +19,7 @@
 #if defined(FEATURE_SUPPORT_WEBCONFIG)
 #include <webcfg_generic.h>
 #endif
-
+#include "webpa_rbus.h"
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -85,7 +85,7 @@ pthread_mutex_t mut=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t con=PTHREAD_COND_INITIALIZER;
 pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-const char * notifyparameters[]={
+const char * staticNotifyParameters[]={
 "Device.NotifyComponent.X_RDKCENTRAL-COM_Connected-Client",
 "Device.Bridging.Bridge.1.Port.8.Enable",
 "Device.Bridging.Bridge.2.Port.2.Enable",
@@ -234,12 +234,15 @@ const char * notifyparameters[]={
 "Device.DeviceInfo.X_RDKCENTRAL-COM_AdvancedSecurity.SafeBrowsing.Enable",
 "Device.DeviceInfo.X_RDKCENTRAL-COM_AdvancedSecurity.Softflowd.Enable"
 };
+
+static char** g_notifyList = NULL;
+pthread_mutex_t g_notify_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 void loadCfgFile();
 static int writeToJson(char *data);
-static PARAMVAL_CHANGE_SOURCE mapWriteID(unsigned int writeID);
+PARAMVAL_CHANGE_SOURCE mapWriteID(unsigned int writeID);
 static void *notifyTask(void *status);
 void *FactoryResetCloudSync();
 static void notifyCallback(NotifyData *notifyData);
@@ -263,6 +266,9 @@ static WDMP_STATUS processParamNotificationRetry(unsigned int *cmc, char **cid);
 static char* generate_trans_uuid();
 void SyncNotifyRetryTask();
 void *SyncNotifyRetry();
+static int getParamsFromFile(char*** outList);
+static void freeGlobalNotifyList(void);
+static void subscribeInitialNorifyParameters();
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -712,7 +718,7 @@ void loadCfgFile()
 static void getNotifyParamList(const char ***paramList, int *size)
 {
     int removeFlag = 0, count = 0, i = 0, fpRemoveFlag = 0;
-    count = sizeof(notifyparameters)/sizeof(notifyparameters[0]);
+    count = sizeof(staticNotifyParameters)/sizeof(staticNotifyParameters[0]);
 #ifdef RDKB_BUILD
     extern int syscfg_init (void);
     extern int syscfg_get (const char *ns, const char *name, char *out_val, int outbufsz);
@@ -745,10 +751,10 @@ static void getNotifyParamList(const char ***paramList, int *size)
 
     if(removeFlag == 1)
     {
-        WalInfo("Removing %s from notification list\n", notifyparameters[0]);
+        WalInfo("Removing %s from notification list\n", staticNotifyParameters[0]);
         for(i = 1; i<count; i++)
         {
-            notifyparameters[i-1] = notifyparameters[i];
+            staticNotifyParameters[i-1] = staticNotifyParameters[i];
         }
         count = count-1;
     }
@@ -762,7 +768,7 @@ static void getNotifyParamList(const char ***paramList, int *size)
 #endif
     *size = count;
 	WalPrint("Notify param list size :%d\n", *size);
-	*paramList = notifyparameters;
+	*paramList = staticNotifyParameters;
 }
 
 /**
@@ -773,7 +779,7 @@ static void setInitialNotify()
 	WalPrint("***************Inside setInitialNotify*****************\n");
 	int i = 0, isError = 0, retry = 0;
 	char notif[20] = "";
-	const char **notifyparameters = NULL;
+	const char **staticNotifyParameters = NULL;
 	int notifyListSize = 0;
 
 	int backoffRetryTime = 0;
@@ -785,11 +791,24 @@ static void setInitialNotify()
 	max_retry_sleep = (int) pow(2, backoff_max_time) -1;
         WalInfo("setInitialNotify max_retry_sleep is %d\n", max_retry_sleep );
 
-	getNotifyParamList(&notifyparameters, &notifyListSize);
+	getNotifyParamList(&staticNotifyParameters, &notifyListSize);
+	setGlobalNotifyParams(NULL, 0, UPDATE_LIST_ONLY);
 
-	//notifyparameters is empty for webpa-video
-	if (notifyparameters != NULL)
+	//staticNotifyParameters is empty for webpa-video
+	if (staticNotifyParameters != NULL)
 	{
+#ifdef WEBPA_DYNAMIC_EVENTING
+		/* Get global parameters */
+		int count = 0;
+		char** g_notifyParameters = getGlobalNotifyParams();
+		for (char** p = g_notifyParameters; p && *p; p++)
+			count++;
+		
+		if(count > 0)
+		{
+			subscribeToNotifyParams(g_notifyParameters, count, NULL, NULL, NULL, NULL);
+		}
+#else
 		int *setInitialNotifStatus = (int *) malloc(
 				sizeof(int) * notifyListSize);
 
@@ -820,21 +839,21 @@ static void setInitialNotify()
 					snprintf(notif, sizeof(notif), "%d", 1);
 					attArr[0].value = (char *) malloc(sizeof(char) * 20);
 					walStrncpy(attArr[0].value, notif, 20);
-					attArr[0].name = (char *) notifyparameters[i];
+					attArr[0].name = (char *) staticNotifyParameters[i];
 					attArr[0].type = WDMP_INT;
-					WalPrint("notifyparameters[%d]: %s\n", i,notifyparameters[i]);
+					WalPrint("staticNotifyParameters[%d]: %s\n", i,staticNotifyParameters[i]);
 					setAttributes(attArr, 1, NULL, &ret);
 					if (ret != WDMP_SUCCESS)
 					{
 						isError = 1;
 						setInitialNotifStatus[i] = 0;
 						WalError("Failed to turn notification ON for parameter : %s ret: %d Attempt Number: %d\n",
-								notifyparameters[i], ret, retry + 1);
+								staticNotifyParameters[i], ret, retry + 1);
 					}
 					else
 					{
 						setInitialNotifStatus[i] = 1;
-						WalInfo("Successfully set notification ON for parameter : %s ret: %d\n",notifyparameters[i], ret);
+						WalInfo("Successfully set notification ON for parameter : %s ret: %d\n",staticNotifyParameters[i], ret);
 					}
 					WAL_FREE(attArr[0].value);
 				}
@@ -867,6 +886,7 @@ static void setInitialNotify()
 		} while (retry++ < WEBPA_SET_INITIAL_NOTIFY_RETRY_COUNT);
 
 		WAL_FREE(setInitialNotifStatus);
+#endif
 
 		WalPrint("**********************End of setInitial Notify************************\n");
 	}
@@ -881,7 +901,7 @@ static void setInitialNotify()
  *
  * @param[in] writeID
  */
-static PARAMVAL_CHANGE_SOURCE mapWriteID(unsigned int writeID)
+PARAMVAL_CHANGE_SOURCE mapWriteID(unsigned int writeID)
 {
 	PARAMVAL_CHANGE_SOURCE source;
 	WalPrint("WRITE ID is %d\n", writeID);
@@ -2222,4 +2242,246 @@ int write_sync_notify_into_file(char *buff)
     }
 
     return 0;
+}
+
+static void freeGlobalNotifyList(void)
+{
+    if (g_notifyList) {
+        for (int i = 0; g_notifyList[i] != NULL; i++) {
+            free(g_notifyList[i]);
+        }
+        free(g_notifyList);
+        g_notifyList = NULL;
+    }
+}
+
+static int getParamsFromFile(char*** outList)
+{
+    FILE* fp = fopen(NOTIFY_PARAM_FILE, "r");
+    if (!fp)
+	{
+		int err = errno;
+		if (err == ENOENT)
+			WalError("getParamsFromFile: file '%s' not found\n", NOTIFY_PARAM_FILE);
+		else
+			WalError("getParamsFromFile: fopen failed for file '%s'. err: %d (%s)\n", NOTIFY_PARAM_FILE, err, strerror(err));
+        return 0;
+	}
+
+    int count = 0;
+    int capacity = 16;
+    char** params = malloc(capacity * sizeof(char*));
+    if (!params)
+	{
+		WalError("malloc failed\n");
+        fclose(fp);
+        return 0;
+    }
+
+    char line[512];
+    while (fgets(line, sizeof(line), fp))
+	{
+        line[strcspn(line, "\r\n")] = '\0';
+        char* start = line + strspn(line, " \t");
+        if (*start == '\0')
+            continue;
+
+		// check for duplicate before adding
+        bool isDup = false;
+        for (int i = 0; i < count; i++)
+		{
+            if (strcmp(params[i], start) == 0)
+			{
+                isDup = true;
+                break;
+            }
+        }
+        if (isDup)
+            continue;
+
+        if (count >= capacity)
+		{
+            capacity *= 2;
+            char** tmp = realloc(params, capacity * sizeof(char*));
+            if (!tmp) {
+                for (int i = 0; i < count; i++) free(params[i]);
+                free(params);
+                fclose(fp);
+                return 0;
+            }
+            params = tmp;
+        }
+
+        params[count] = strdup(start);
+        if (!params[count])
+		{
+            for (int i = 0; i < count; i++)
+			{
+				free(params[i]);
+			}
+            free(params);
+            fclose(fp);
+            return 0;
+        }
+        count++;
+    }
+    fclose(fp);
+
+    char** tmp = realloc(params, (count + 1) * sizeof(char*));
+    if (tmp) params = tmp;
+    params[count] = NULL;
+
+    *outList = params;
+    return count;
+}
+
+/* To populate global parameters list  */
+int setGlobalNotifyParams(const char** cloudNotifyList, int cloudCount, NotifyListUpdate_mode mode)
+{
+	WalInfo("Inside setGlobalNotifyParams function\n");
+    pthread_mutex_lock(&g_notify_list_mutex);
+
+	/* Get parameters from file */
+    char** dynamicNotifyList = NULL;
+	int dynamicNotifyList_count = 0;
+
+    dynamicNotifyList_count = getParamsFromFile(&dynamicNotifyList);
+	WalInfo("No. of entries found in file: %d\n", dynamicNotifyList_count);
+
+    /* Check operation mode */
+    if (cloudNotifyList && cloudCount > 0)
+	{
+		WalInfo("notifyList update mode is UPDATE_LIST_AND_WRITE_FILE\n");
+        /* Boolean array for marking duplicates */
+        bool *isDupList = calloc(cloudCount, sizeof(bool));
+        if (!isDupList) goto error;
+
+        int uniqCnt = 0;
+        for (int i = 0; i < cloudCount; i++)
+		{
+            if (!cloudNotifyList[i]) continue;
+            bool isDup = false;
+            for (int j = 0; j < dynamicNotifyList_count; j++)
+			{
+                if (strcmp(cloudNotifyList[i], dynamicNotifyList[j]) == 0)
+				{
+                    isDup = true;
+                    break;
+                }
+            }
+            if (!isDup)
+			{
+                isDupList[i] = false;
+                uniqCnt++;
+            }
+			else
+			{
+                isDupList[i] = true;
+            }
+        }
+
+        if (uniqCnt > 0)
+		{
+            char** tmp = realloc(dynamicNotifyList, (dynamicNotifyList_count + uniqCnt + 1) * sizeof(char*));
+            if (!tmp)
+			{
+                WalError("Memory allocation failed for dynamic params\n");
+                free(isDupList);
+                goto error;
+            }
+            dynamicNotifyList = tmp;
+
+            /* Append only the unique parameters */
+            for (int i = 0; i < cloudCount; i++)
+			{
+                if (!cloudNotifyList[i] || isDupList[i]) continue;
+                dynamicNotifyList[dynamicNotifyList_count] = strdup(cloudNotifyList[i]);
+                if (!dynamicNotifyList[dynamicNotifyList_count])
+				{
+                    free(isDupList);
+                    WalError("strdup failed\n");
+                    goto error;
+                }
+                dynamicNotifyList_count++;
+            }
+            dynamicNotifyList[dynamicNotifyList_count] = NULL;
+		}
+		free(isDupList);
+
+		if (uniqCnt > 0 && mode == UPDATE_LIST_AND_WRITE_FILE)
+		{
+			/* Write to NOTIFY_PARAM_FILE from dynamicNotifyList */
+			FILE* fp = fopen(NOTIFY_PARAM_FILE ".tmp", "w");
+			if (!fp)
+			{
+				WalError("Failed to open temp file\n");
+				goto error;
+			}
+			for (int i = 0; i < dynamicNotifyList_count; i++)
+				fprintf(fp, "%s\n", dynamicNotifyList[i]);
+			fclose(fp);
+			/*
+				* Atomically replace the original file with the temporary file.
+				* This ensures that the original file is only updated if the write to the temp file succeeds,
+				* preventing partial or corrupted writes in case of failure or interruption.
+			*/
+				rename(NOTIFY_PARAM_FILE ".tmp", NOTIFY_PARAM_FILE);
+		}
+		else
+		{
+			WalInfo("notifyList update mode is UPDATE_LIST_ONLY\n");
+		}
+	}
+
+    /* Build global list */
+	int staticNotifyParamsCount = sizeof(staticNotifyParameters) / sizeof(staticNotifyParameters[0]);
+
+    char** templist = calloc( (staticNotifyParamsCount + dynamicNotifyList_count) + 1, sizeof(char*));
+    if (!templist)
+	{
+        WalError("Failed to allocate global list\n");
+        goto error;
+    }
+
+    /* Copy static params */
+    for (int i = 0; i < staticNotifyParamsCount; i++)
+        templist[i] = strdup(staticNotifyParameters[i]);
+
+    /* Append dynamic params */
+	if (dynamicNotifyList_count > 0 && dynamicNotifyList != NULL)
+	{
+		for (int i = 0; i < dynamicNotifyList_count; i++)
+		{
+			if(dynamicNotifyList[i])
+			{
+				templist[staticNotifyParamsCount + i] = dynamicNotifyList[i];
+				dynamicNotifyList[i] = NULL;
+			}
+    	}
+	}
+
+    freeGlobalNotifyList();
+    g_notifyList = templist;
+
+    if (dynamicNotifyList)
+		free(dynamicNotifyList);
+    pthread_mutex_unlock(&g_notify_list_mutex);
+    return 0;
+
+error:
+    if (dynamicNotifyList) {
+        for (int i = 0; i < dynamicNotifyList_count; i++)
+            free(dynamicNotifyList[i]);
+        free(dynamicNotifyList);
+    }
+    pthread_mutex_unlock(&g_notify_list_mutex);
+    return -1;
+}
+
+char** getGlobalNotifyParams(void)
+{
+    pthread_mutex_lock(&g_notify_list_mutex);
+    char** list = g_notifyList;
+    pthread_mutex_unlock(&g_notify_list_mutex);
+    return list;
 }
