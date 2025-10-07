@@ -5,6 +5,8 @@
  *
  * Copyright (c) 2015  Comcast
  */
+#ifndef _WEBPA_NOTIFICATION_H_
+#define _WEBPA_NOTIFICATION_H_
 #include <cJSON.h>
 #include "stdlib.h"
 #include "wdmp-c.h"
@@ -22,6 +24,7 @@
     #define WEBPA_CFG_FILE                      "/tmp/webpa_cfg.json"
 #endif
 #define SYNC_NOTIFY_PARAM_BACKUP_FILE "/tmp/webpa_sync_notification.json"
+#define NOTIFY_PARAM_FILE "/nvram/webpa_notify_param"
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
@@ -142,3 +145,12 @@ void FR_CloudSyncCheck();
 
 int read_sync_notify_from_file();
 int write_sync_notify_into_file(char *buff);
+
+char* readDynamicParamsFromDBFile();
+int writeDynamicParamToDBFile(const char *param);
+g_NotifyParam* searchParaminGlobalList(const char *paramName);
+void addParamToGlobalList(const char* paramName, bool paramType, bool paramSubscriptionStatus);
+char* CreateJsonFromGlobalNotifyList();
+void setInitialNotifyInProgress(bool value);
+bool getInitialNotifyInProgress();
+#endif

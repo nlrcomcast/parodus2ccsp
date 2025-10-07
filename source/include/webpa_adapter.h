@@ -39,6 +39,23 @@ extern int numLoops;
 #define OnboardLog(...)
 #endif
 
+#define DYNAMIC_PARAM 0
+#define STATIC_PARAM 1
+#define OFF 0
+#define ON 1
+
+typedef struct g_NotifyParam
+{
+    char *paramName;
+    bool paramType;
+    bool paramSubscriptionStatus;
+    struct g_NotifyParam *next;
+} g_NotifyParam;
+
+extern g_NotifyParam *g_NotifyParamHead;
+extern g_NotifyParam *g_NotifyParamTail;
+extern pthread_mutex_t g_NotifyParamMut;
+
 /**
  * @brief Set operations supported by WebPA.
  */
@@ -188,5 +205,11 @@ void initNotifyTask(int status);
 void sendNotification(char *payload, char *source, char *destination);
 
 char* parsePayloadForStatus(char *payload);
+
+// typedef enum {
+//     PARAM_NOT_FOUND,
+//     PARAM_FOUND_ON,
+//     PARAM_FOUND_OFF
+// } paramStatus;
 
 #endif /* _WEBPA_ADAPTER_H_ */
