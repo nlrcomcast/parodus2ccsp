@@ -13,6 +13,7 @@
 #include <errno.h>
 #include "webpa_notification.h"
 #include "webpa_internal.h"
+#include "webpa_eventing.h"
 #ifdef RDKB_BUILD
 #include <sysevent/sysevent.h>
 #endif
@@ -775,6 +776,8 @@ static void setInitialNotify()
 	char notif[20] = "";
 	const char **notifyparameters = NULL;
 	int notifyListSize = 0;
+	char *dynamic_param_list = NULL;
+	g_NotifyParam *currentParam = NULL;	
 
 	int backoffRetryTime = 0;
 	int backoff_max_time = 10;
@@ -790,16 +793,42 @@ static void setInitialNotify()
 	//notifyparameters is empty for webpa-video
 	if (notifyparameters != NULL)
 	{
-		int *setInitialNotifStatus = (int *) malloc(
-				sizeof(int) * notifyListSize);
 
 		WDMP_STATUS ret = WDMP_FAILURE;
 		param_t *attArr = NULL;
 
 		for (i = 0; i < notifyListSize; i++)
 		{
-			setInitialNotifStatus[i] = 0;
+			//Adding static params to global param list
+			addParamToGlobalList(notifyparameters[i],STATIC_PARAM,OFF);
 		}
+
+		//Adding dynamic params into global param list
+		dynamic_param_list = readDynamicParamsFromDBFile();
+		if(dynamic_param_list != NULL)
+		{
+			WalInfo("Dynamic params read from DB file successfully: %s\n",dynamic_param_list);
+			char *token;
+			token = strtok(dynamic_param_list, ",");
+			while (token != NULL) 
+			{
+				if(strncmp(token, "Device.", 7) == 0)
+				{	
+					WalInfo("Adding Dynamic param: %s into global list\n", token);
+					addParamToGlobalList(token,DYNAMIC_PARAM,OFF);
+					notifyListSize++;
+				}
+				token = strtok(NULL, ",");
+			}
+			WAL_FREE(dynamic_param_list);
+		}
+		else
+		{
+			WalInfo("Failed to read dynamic params from DB file\n");
+		}
+
+		// Set flag to true for initial notification
+		setInitialNotifyInProgress(true);
 
 		do
 		{
@@ -813,33 +842,38 @@ static void setInitialNotify()
 			isError = 0;
 			WalPrint("notify List Size: %d\n", notifyListSize);
 			attArr = (param_t *) malloc(sizeof(param_t));
-			for (i = 0; i < notifyListSize; i++)
+			currentParam = getGlobalNotifyHead();			
+			for (i = 0; currentParam && (i < notifyListSize); i++)
 			{
-				if (setInitialNotifStatus[i] == 0)
+				if (currentParam->paramSubscriptionStatus == OFF)
 				{
 					snprintf(notif, sizeof(notif), "%d", 1);
 					attArr[0].value = (char *) malloc(sizeof(char) * 20);
 					walStrncpy(attArr[0].value, notif, 20);
-					attArr[0].name = (char *) notifyparameters[i];
+					attArr[0].name = strdup(currentParam->paramName);
 					attArr[0].type = WDMP_INT;
-					WalPrint("notifyparameters[%d]: %s\n", i,notifyparameters[i]);
+					WalPrint("notifyparameters[%d]: %s\n", i,currentParam->paramName);
 					setAttributes(attArr, 1, NULL, &ret);
 					if (ret != WDMP_SUCCESS)
 					{
 						isError = 1;
-						setInitialNotifStatus[i] = 0;
+						currentParam->paramSubscriptionStatus = OFF;
 						WalError("Failed to turn notification ON for parameter : %s ret: %d Attempt Number: %d\n",
-								notifyparameters[i], ret, retry + 1);
+								currentParam->paramName, ret, retry + 1);
 					}
 					else
 					{
-						setInitialNotifStatus[i] = 1;
-						WalInfo("Successfully set notification ON for parameter : %s ret: %d\n",notifyparameters[i], ret);
+						currentParam->paramSubscriptionStatus = ON;
+						WalInfo("Successfully set notification ON for parameter : %s ret: %d\n",currentParam->paramName, ret);
 					}
 					WAL_FREE(attArr[0].value);
+					WAL_FREE(attArr[0].name);
 				}
+				currentParam = currentParam->next;
 			}
-
+			// Clear the flag for accepting cloud requests
+			setInitialNotifyInProgress(false);
+			WalInfo("\n initialNotifyInProgress flag is cleared. Cloud requests now allowed.\n");
 			WAL_FREE(attArr);
 
 			if (isError == 0)
@@ -866,7 +900,6 @@ static void setInitialNotify()
 
 		} while (retry++ < WEBPA_SET_INITIAL_NOTIFY_RETRY_COUNT);
 
-		WAL_FREE(setInitialNotifStatus);
 
 		WalPrint("**********************End of setInitial Notify************************\n");
 	}
