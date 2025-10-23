@@ -185,7 +185,7 @@ char* CreateJsonFromGlobalNotifyList()
 {
 	char *paramList = NULL;
     bool status = 0;
-
+    WalInfo("Inside CreateJsonFromGlobalNotifyList function\n");
 	g_NotifyParam *temp = getGlobalNotifyHead();
 	cJSON *jsonArray = cJSON_CreateArray();
     while (temp != NULL) 
