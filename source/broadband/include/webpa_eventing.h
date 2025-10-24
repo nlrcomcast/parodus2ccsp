@@ -27,13 +27,15 @@ typedef struct g_NotifyParam
     struct g_NotifyParam *next;
 } g_NotifyParam;
 
-char* readDynamicParamsFromDBFile();
+void readDynamicParamsFromDBFile(int *notifyListSize);
 int writeDynamicParamToDBFile(const char *param);
 g_NotifyParam* searchParaminGlobalList(const char *paramName);
 void addParamToGlobalList(const char* paramName, bool paramType, bool paramSubscriptionStatus);
 char* CreateJsonFromGlobalNotifyList();
-void setInitialNotifyInProgress(bool value);
-bool getInitialNotifyInProgress();
+void setBootupNotifyInitDone(bool value);
+bool getBootupNotifyInitDone();
 g_NotifyParam* getGlobalNotifyHead();
+bool getParamStatus(g_NotifyParam *param);
+void updateParamStatus(g_NotifyParam *param, bool status);
 
 #endif // WEBPA_EVENTING_H

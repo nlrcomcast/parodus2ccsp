@@ -776,7 +776,6 @@ static void setInitialNotify()
 	char notif[20] = "";
 	const char **notifyparameters = NULL;
 	int notifyListSize = 0;
-	char *dynamic_param_list = NULL;
 	g_NotifyParam *currentParam = NULL;	
 
 	int backoffRetryTime = 0;
@@ -803,32 +802,8 @@ static void setInitialNotify()
 			addParamToGlobalList(notifyparameters[i],STATIC_PARAM,OFF);
 		}
 
-		//Adding dynamic params into global param list
-		dynamic_param_list = readDynamicParamsFromDBFile();
-		if(dynamic_param_list != NULL)
-		{
-			WalInfo("Dynamic params read from DB file successfully: %s\n",dynamic_param_list);
-			char *token;
-			token = strtok(dynamic_param_list, ",");
-			while (token != NULL) 
-			{
-				if(strncmp(token, "Device.", 7) == 0)
-				{	
-					WalInfo("Adding Dynamic param: %s into global list\n", token);
-					addParamToGlobalList(token,DYNAMIC_PARAM,OFF);
-					notifyListSize++;
-				}
-				token = strtok(NULL, ",");
-			}
-			WAL_FREE(dynamic_param_list);
-		}
-		else
-		{
-			WalInfo("Failed to read dynamic params from DB file\n");
-		}
-
-		// Set flag to true for initial notification
-		setInitialNotifyInProgress(true);
+		//reading dynamic params from DB and add into global param list
+		readDynamicParamsFromDBFile(&notifyListSize);
 
 		do
 		{
@@ -845,7 +820,7 @@ static void setInitialNotify()
 			currentParam = getGlobalNotifyHead();			
 			for (i = 0; currentParam && (i < notifyListSize); i++)
 			{
-				if (currentParam->paramSubscriptionStatus == OFF)
+				if (getParamStatus(currentParam) == OFF)
 				{
 					snprintf(notif, sizeof(notif), "%d", 1);
 					attArr[0].value = (char *) malloc(sizeof(char) * 20);
@@ -857,13 +832,13 @@ static void setInitialNotify()
 					if (ret != WDMP_SUCCESS)
 					{
 						isError = 1;
-						currentParam->paramSubscriptionStatus = OFF;
+						updateParamStatus(currentParam, OFF);
 						WalError("Failed to turn notification ON for parameter : %s ret: %d Attempt Number: %d\n",
 								currentParam->paramName, ret, retry + 1);
 					}
 					else
 					{
-						currentParam->paramSubscriptionStatus = ON;
+						updateParamStatus(currentParam, ON);
 						WalInfo("Successfully set notification ON for parameter : %s ret: %d\n",currentParam->paramName, ret);
 					}
 					WAL_FREE(attArr[0].value);
@@ -871,9 +846,9 @@ static void setInitialNotify()
 				}
 				currentParam = currentParam->next;
 			}
-			// Clear the flag for accepting cloud requests
-			setInitialNotifyInProgress(false);
-			WalInfo("\n initialNotifyInProgress flag is cleared. Cloud requests now allowed.\n");
+			// Set the flag for accepting cloud requests
+			setBootupNotifyInitDone(true);
+			WalInfo("bootupNotifyInitDone flag is set to true. Cloud requests now allowed.\n");
 			WAL_FREE(attArr);
 
 			if (isError == 0)

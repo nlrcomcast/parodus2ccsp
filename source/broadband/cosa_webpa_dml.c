@@ -466,13 +466,13 @@ int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size
     int i=0, j=0, k=0, l=0, isWildcard = 0, matchFound = 0;
     int localCount = paramCount;
     char tmpchar[128] = { 0 };
-    WalInfo("*********** %s ***************\n",__FUNCTION__);
+    WalPrint("*********** %s ***************\n",__FUNCTION__);
 
     PCOSA_DATAMODEL_WEBPA       hWebpa    = (PCOSA_DATAMODEL_WEBPA)g_pCosaBEManager->hWebpa;
     PCOSA_DML_WEBPA             pWebpa    = (PCOSA_DML_WEBPA) hWebpa->pWebpa;
     PCOSA_DML_WEBPA_CONFIG      pWebpaCfg = (PCOSA_DML_WEBPA_CONFIG)pWebpa->pWebpaCfg;
 
-    WalInfo("paramCount = %d\n",paramCount);
+    WalPrint("paramCount = %d\n",paramCount);
     for(i=0; i<paramCount; i++)
     {
         if(parameterNames[i][strlen(parameterNames[i])-1] == '.')
@@ -545,13 +545,14 @@ int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size
                                         WalError("Failed to allocate memory for parameterValue for NotifyParameters request\n");
                                     }
                                     WalPrint("Global notify param list is %s\n",paramVal[k]->parameterValue);
+                                    paramVal[k]->type = ccsp_none;
                                 }
                                 else
                                 {
                                     snprintf(paramVal[k]->parameterValue,sizeof(char)*MAX_PARAMETERVALUE_LEN,"%s","Global param list is empty");
                                     WalError("Global param list is empty\n");
+                                    paramVal[k]->type = ccsp_string;
                                 }
-                                paramVal[k]->type = ccsp_string;
                                 k++;
                             }                              
                             else
@@ -609,14 +610,15 @@ int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size
                                     {
                                         WalError("Failed to allocate memory for parameterValue for NotifyParameters request\n");
                                     }
-                                    WalInfo("Global notify param list is %s\n",paramVal[k]->parameterValue);
+                                    WalPrint("Global notify param list is %s\n",paramVal[k]->parameterValue);
+                                    paramVal[k]->type = ccsp_none;
                                 }
                                 else
                                 {
                                     snprintf(paramVal[k]->parameterValue,sizeof(char)*MAX_PARAMETERVALUE_LEN,"%s","Global param list is empty");
                                     WalError("Global param list is empty\n");
+                                    paramVal[k]->type = ccsp_string;
                                 }
-                                paramVal[k]->type = ccsp_string;
                                 k++;
                             }
                             else

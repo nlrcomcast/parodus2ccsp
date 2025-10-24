@@ -15,16 +15,16 @@ g_NotifyParam *g_NotifyParamHead = NULL;
 g_NotifyParam *g_NotifyParamTail = NULL;
 pthread_mutex_t g_NotifyParamMut = PTHREAD_MUTEX_INITIALIZER;
 
-bool initialNotifyInProgress = true; //By default set to true until initial notify ON is done minimum one iteration
+bool bootupNotifyInitDone = false; //By default set to false until initial notify ON is done minimum one iteration
 
-bool getInitialNotifyInProgress()
+bool getBootupNotifyInitDone()
 {
-    return initialNotifyInProgress;
+    return bootupNotifyInitDone;
 }
 
-void setInitialNotifyInProgress(bool value)
+void setBootupNotifyInitDone(bool value)
 {
-   initialNotifyInProgress  = value;
+   bootupNotifyInitDone  = value;
 }
 
 void addParamToGlobalList(const char *paramName,bool paramType, bool paramSubscriptionStatus)
@@ -70,32 +70,21 @@ g_NotifyParam* searchParaminGlobalList(const char *paramName)
         WalError("Parameter name is NULL while searching in GlobalList\n");
         return NULL;
     }
-    g_NotifyParam *copy = NULL;
-
+    g_NotifyParam *temp = NULL;
     pthread_mutex_lock(&g_NotifyParamMut);
-	g_NotifyParam *temp = g_NotifyParamHead;
+	temp = g_NotifyParamHead;
 	while(temp != NULL)
 	{
 		if(strcmp(temp->paramName,paramName) == 0)
 		{
-            copy = (g_NotifyParam *)malloc(sizeof(g_NotifyParam));
-            if (copy)
-            {
-                memcpy(copy, temp, sizeof(g_NotifyParam));
-                copy->paramName = strdup(temp->paramName);
-                copy->next = NULL;
-            }
-            else
-            {
-                WalError("Memory allocation failed in searchParaminGlobalList\n");
-            }
+            WalPrint("Parameter %s is found in list\n",paramName);
             break;
 		}
 		temp = temp->next;
 	}
     pthread_mutex_unlock(&g_NotifyParamMut);
 
-	return copy;
+	return temp;
 }
 
 g_NotifyParam* getGlobalNotifyHead()
@@ -117,7 +106,7 @@ int writeDynamicParamToDBFile(const char *param)
 	}
 	if(param !=NULL)
 	{
-		fprintf(fp,"%s,",param);
+		fprintf(fp,"%s\n",param);
 		fclose(fp);
 		return 1;
 	}
@@ -129,63 +118,43 @@ int writeDynamicParamToDBFile(const char *param)
 	}
 }
 
-char* readDynamicParamsFromDBFile()
+void readDynamicParamsFromDBFile(int *notifyListSize)
 {
 	FILE *fp;
-	long file_size = 0;
-	size_t read_size = 0;
-	char *paramList = NULL;
+	char param[512];
 	
 	WalInfo("Dynamic parameters reading from DB %s\n",NOTIFY_PARAM_FILE);
 
 	if (access(NOTIFY_PARAM_FILE, F_OK) != 0)
 	{
 		WalInfo("No dynamic parameters were available for this device\n");
-		return NULL;
+		return ;
 	}
 
 	fp = fopen(NOTIFY_PARAM_FILE , "r");
 	if (fp == NULL)
 	{
 		WalError("Failed to open file in db '%s' for read\n", NOTIFY_PARAM_FILE);
-		return NULL;
+		return ;
 	}
 
-    // Move to end to determine file size
-    fseek(fp, 0, SEEK_END);
-    file_size = ftell(fp);
-    rewind(fp);  // Go back to beginning
-
-	if(file_size <= 0)
-	{
-		WalError("Dynamic parameter list is empty\n");
-        fclose(fp);
-		return NULL;
+	// Read each line until EOF
+	while (fscanf(fp,"%511s", param) != EOF) 
+    {
+        addParamToGlobalList(param,DYNAMIC_PARAM,OFF);
+        (*notifyListSize)++;
 	}
 
-    // Allocate memory to hold the entire file content
-    paramList = (char *)malloc(file_size + 1);
-    if (paramList == NULL)
-	{
-        WalError("Memory allocation failed while reading DB file %s\n", NOTIFY_PARAM_FILE);
-        fclose(fp);
-        return NULL;
-    }
-
-    // Read entire file into paramList
-    read_size = fread(paramList, 1, file_size, fp);
-    paramList[read_size] = '\0';
 	fclose(fp);
-
-	WalInfo("Successfully read %zu bytes from %s\n", read_size, NOTIFY_PARAM_FILE);
-	return paramList;
+	WalInfo("Successfully read params from %s\n", NOTIFY_PARAM_FILE);
+    return ; 
 }
 
 char* CreateJsonFromGlobalNotifyList()
 {
 	char *paramList = NULL;
     bool status = 0;
-    WalInfo("Inside CreateJsonFromGlobalNotifyList function\n");
+
 	g_NotifyParam *temp = getGlobalNotifyHead();
 	cJSON *jsonArray = cJSON_CreateArray();
     while (temp != NULL) 
@@ -216,4 +185,24 @@ char* CreateJsonFromGlobalNotifyList()
 	paramList = cJSON_PrintUnformatted(jsonArray);
 	cJSON_Delete(jsonArray);
 	return paramList;	
+}
+
+bool getParamStatus(g_NotifyParam *param) 
+{
+    bool status;
+    pthread_mutex_lock(&g_NotifyParamMut);
+    status = param->paramSubscriptionStatus;
+    pthread_mutex_unlock(&g_NotifyParamMut);
+    return status;
+}
+
+// Function to safely update paramSubscriptionStatus
+void updateParamStatus(g_NotifyParam *param, bool status) 
+{
+    if (param == NULL) 
+        return;
+
+    pthread_mutex_lock(&g_NotifyParamMut);
+    param->paramSubscriptionStatus = status;
+    pthread_mutex_unlock(&g_NotifyParamMut);
 }

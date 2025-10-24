@@ -209,7 +209,7 @@ rbusError_t NotifyParamMethodHandler(
     rbusValue_Init(&message);
     rbusValue_Init(&statusCode);
 
-    if(getInitialNotifyInProgress())
+    if(getBootupNotifyInitDone() == false)
     {
         WalError("Initial notification setup during bootup is in progress. Please retry later.\n");
         rbusValue_SetString(message, "Initial notification setup during bootup is in progress. Please retry later.");
