@@ -153,7 +153,6 @@ void readDynamicParamsFromDBFile(int *notifyListSize)
 char* CreateJsonFromGlobalNotifyList()
 {
 	char *paramList = NULL;
-    bool status = 0;
 
 	g_NotifyParam *temp = getGlobalNotifyHead();
 	cJSON *jsonArray = cJSON_CreateArray();

@@ -12,7 +12,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#ifdef BUILD_YOCTO
 #define NOTIFY_PARAM_FILE "/nvram/webpa_notify_param"
+#else
+#define NOTIFY_PARAM_FILE "/tmp/webpa_notify_param"
+#endif
 
 #define DYNAMIC_PARAM 0
 #define STATIC_PARAM 1

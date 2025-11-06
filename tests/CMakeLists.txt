@@ -125,6 +125,14 @@ add_executable(test_webpa_internal test_webpa_internal.c ../source/broadband/web
 target_link_libraries (test_webpa_internal ${WEBPA_COMMON_LIBS} -llibparodus -lwdmp-c -lrbus -ldbus-1 -lccsp_common -lcunit)
 target_link_libraries (test_webpa_internal gcov -Wl,--no-as-needed )
 
+#-------------------------------------------------------------------------------
+#   test_webpa_eventing
+#-------------------------------------------------------------------------------
+add_test(NAME test_webpa_eventing COMMAND ${MEMORY_CHECK} ./test_webpa_eventing)
+add_executable(test_webpa_eventing test_webpa_eventing.c ../source/broadband/webpa_eventing.c)
+target_link_libraries (test_webpa_eventing -lcjson -lcunit ${WEBPA_COMMON_LIBS})
+target_link_libraries (test_webpa_eventing gcov -Wl,--no-as-needed )
+
 # Code coverage
 
 add_custom_target(coverage
@@ -154,6 +162,8 @@ COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_test_set.dir/__/src --output-file test_webpa_test_set.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_internal.dir/__/src --output-file test_webpa_internal.info
+COMMAND lcov -q --capture --directory
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_eventing.dir/__/src --output-file test_webpa_eventing.info
 
 COMMAND lcov
 -a test_libpd.info
@@ -169,6 +179,7 @@ COMMAND lcov
 -a test_webpa_table.info
 -a test_webpa_notification_cunit.info
 -a test_webpa_test_set.info
+-a test_webpa_eventing.info
 --output-file coverage.info
 
 COMMAND genhtml coverage.info
