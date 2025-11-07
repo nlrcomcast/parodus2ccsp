@@ -529,6 +529,34 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                 WalPrint("Response:> retStatus = %d\n", *resObj->retStatus);
                         }
                         break;
+
+                        case METHOD:
+                        {
+                                WalInfo("Method Name is %s\n",reqObj->u.methodReq->methodName);
+                                WalInfo("Params are %s\n",reqObj->u.methodReq->params);
+
+                                if(strstr(reqObj->u.methodReq->methodName,WEBPA_NOTIFY_SUBSCRIPTION) == NULL)
+                                {
+                                        ProcessNotifyParamMethod(reqObj->u.methodReq->params);
+                                }
+                                else
+                                {
+                                        ret = validate_method_req(reqObj->u.methodReq.methodName, reqObj->u.methodReq->params);
+                                        WalInfo("ret : %d\n",ret);
+                                        if(ret == WDMP_SUCCESS)
+                                        {
+                                                invokeMethod(reqObj->u.methodReq.methodName, reqObj->u.methodReq->params, &ret);
+                                                WalInfo("ret : %d\n",ret);
+                                        }
+                                        else
+                                        {
+                                                WalError("Method validations failed\n");
+                                        }
+                                }
+                                *resObj->retStatus = ret;
+                        }
+                        break
+
                 }
         }
 	else
