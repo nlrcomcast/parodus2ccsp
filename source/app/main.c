@@ -25,7 +25,13 @@
 #ifndef INCLUDE_BREAKPAD
 static void sig_handler(int sig);
 #endif
-
+#include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+void initMethodTestTask();
+static void *MethodTestTask();
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -69,7 +75,7 @@ int main()
 	WalInfo("Syncing backend manager with DB....\n");
 	CosaWebpaSyncDB();
 	WalInfo("Webpa backend manager is in sync with DB\n");
-
+	initMethodTestTask();
 	initComponentCaching(ret);
 	// Initialize Apply WiFi Settings handler
 	initApplyWiFiSettings();
@@ -130,3 +136,58 @@ static void sig_handler(int sig)
 	
 }
 #endif
+static void *MethodTestTask()
+{
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
+    char *reqPayload = NULL;
+    char *resPayload = NULL;
+    FILE *fp;
+    char filename[] = "/tmp/MethodReq.json";
+	char line[1024];
+	while(1)
+	{
+
+		fp = fopen(filename, "r");
+		if (fp == NULL) {
+			//WalError("/tmp/MethodReq.json File does not exist.\n");
+			sleep(5);
+			continue;
+		}
+		WalInfo("Reading method request from /tmp/MethodReq.json\n");
+
+		if (fgets(line, sizeof(line), fp) != NULL) {
+			WalInfo("Read line: %s", line);
+		} else {
+			WalInfo("File is empty or read error.\n");
+		}
+		fclose(fp);
+
+		if (remove(filename) == 0) {
+			WalInfo("File deleted successfully.\n");
+		} else {
+			WalInfo("Error deleting file.\n");
+		}
+		reqPayload = strdup(line);
+		processRequest(reqPayload, NULL, &resPayload, req_headers, res_headers);
+		WalInfo("Method Response: %s\n",resPayload);
+		WAL_FREE(reqPayload);
+		WAL_FREE(resPayload);
+	    sleep(5);
+	}
+	return 0;
+}
+void initMethodTestTask()
+{
+	int err = 0;
+	pthread_t threadId;
+	err = pthread_create(&threadId, NULL, MethodTestTask, NULL);
+	if (err != 0)
+	{
+		WalError("Error creating MethodTestTask thread :[%s]\n", strerror(err));
+	}
+	else
+	{
+		WalInfo("MethodTestTask Thread created Successfully\n");
+	}
+}

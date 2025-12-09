@@ -4,6 +4,13 @@
 #include "../source/include/webpa_rbus.h"
 rbusHandle_t handle;
 
+#define UNUSED(x) (void )(x)
+void setAttributes(param_t *attArr, const unsigned int paramCount, money_trace_spans *timeSpan, WDMP_STATUS *retStatus)
+{
+    UNUSED(attArr); UNUSED(paramCount); UNUSED(timeSpan); UNUSED(retStatus);
+
+}
+
 // Test case for isRbusEnabled
 void test_isRbusEnabled_success()
 {

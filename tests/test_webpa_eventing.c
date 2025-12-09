@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
-
+#include <rbus/rbus.h>
 #include "../source/include/webpa_adapter.h"
 #include "../source/broadband/include/webpa_eventing.h"
 
@@ -29,6 +29,19 @@
 extern g_NotifyParam *g_NotifyParamHead;
 extern g_NotifyParam *g_NotifyParamTail;
 extern pthread_mutex_t g_NotifyParamMut;
+
+#define UNUSED(x) (void )(x)
+
+rbusHandle_t get_webpa_rbus_Handle(void)
+{
+     return NULL;
+}
+
+void setAttributes(param_t *attArr, const unsigned int paramCount, money_trace_spans *timeSpan, WDMP_STATUS *retStatus)
+{
+    UNUSED(attArr); UNUSED(paramCount); UNUSED(timeSpan); UNUSED(retStatus);
+
+}
 
 // === Helper to cleanup global list ===
 static void cleanup_global_list(void)

@@ -33,6 +33,11 @@
 #define UNUSED(x) (void )(x)
 #define MAX_PARAMETER_LEN			512
 
+rbusHandle_t get_webpa_rbus_Handle(void)
+{
+     return NULL;
+}
+
 int getWebpaParameterValues(char **parameterNames, int paramCount, int *val_size, parameterValStruct_t ***val)
 {
     UNUSED(parameterNames); UNUSED(paramCount); UNUSED(val_size); UNUSED(val);

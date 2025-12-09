@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <cJSON.h>
 #include <string.h>
-#include "include/webpa_eventing.h"
+#include "webpa_eventing.h"
 #include "webpa_adapter.h"
 
 g_NotifyParam *g_NotifyParamHead = NULL;
@@ -204,4 +204,126 @@ void updateParamStatus(g_NotifyParam *param, bool status)
     pthread_mutex_lock(&g_NotifyParamMut);
     param->paramSubscriptionStatus = status;
     pthread_mutex_unlock(&g_NotifyParamMut);
+}
+
+int validateDynamicEventingData(method_req_t *methodReq)
+{
+	if(methodReq->objectCnt == 0)
+	{
+		return WDMP_FAILURE;
+	}
+    for (size_t i = 0; i < methodReq->objectCnt; i++)
+    {
+        method_param_t *obj = &methodReq->objects[i];
+		kv_pair_t *param = &obj->params[0];
+		    // Ensure we have at least 2 parameters
+		if (obj->paramCnt < 2) 
+		{
+			WalError("Insufficient parameters\n");
+			return WDMP_ERR_NOTIF_FIELD_COUNT;
+		}
+		// Validate 'name' key
+		if((param->name == NULL) || (strcmp(param->name, "name") != 0))
+		{
+			WalError("Missing name field in method request\n");
+			return WDMP_ERR_NOTIF_NAME_FIELD;
+		}
+		// Validate 'name' key
+		if((param->type != WDMP_STRING) || (param->value.s == NULL))
+		{
+			WalError("Missing parameter name in method request\n");
+			return WDMP_ERR_NOTIF_NAME_MISSING;
+		}
+
+		param = &obj->params[1];
+		// Validate 'notificationType' key
+		if(strcmp(param->name, "notificationType") != 0)
+		{
+			WalError("Missing notificationType field in method request\n");
+			return WDMP_ERR_NOTIF_TYPE_FIELD;
+		}
+		// Validate 'notificationType' value
+		if((param->type != WDMP_STRING) || (param->value.s == NULL))
+		{
+			WalError("Missing parameter notificationType field in method reques\n");
+			return WDMP_ERR_NOTIF_TYPE_MISSING;
+		}		
+		// Validate 'notificationType' value
+		if(strcmp(param->value.s, "ValueChange") != 0)
+		{
+			WalError("Notification type is not supported:%s\n",param->value.s);
+			return WDMP_ERR_NOTIF_TYPE_INVALID;
+		}
+	}
+	return WDMP_SUCCESS;
+}
+
+void ProcessNotifyParamMethod(method_req_t *methodReq, res_struct *resObj)
+{
+    if (methodReq == NULL)
+    {
+        WalError("ProcessNotifyParamMethod: methodReq is NULL\n");
+        return;
+    }
+    param_t att;
+	WDMP_STATUS wret = WDMP_FAILURE;
+	memset(&att, 0, sizeof(att));
+
+	wret = validateDynamicEventingData(methodReq);
+	if(wret != WDMP_SUCCESS)
+	{
+		resObj->retStatus[0] = wret;
+		WalError("validateDynamicEventingData failed for method '%s' \n", methodReq->methodName);
+		return;
+	}
+
+    // Process each parameter object
+    for (size_t i = 0; i < methodReq->objectCnt; i++)
+    {
+        method_param_t *obj = &methodReq->objects[i];
+		kv_pair_t *param = &obj->params[0];
+		WalInfo("Processing parmaeter %s for subscription",param->value.s);
+		resObj->u.paramRes->params[i].name = strdup(param->value.s);
+
+		g_NotifyParam *node = searchParaminGlobalList(param->value.s);
+        if(node == NULL || node->paramSubscriptionStatus == OFF)
+        {
+			att.name = strdup(param->value.s);
+			att.value = strdup("1");
+			att.type = WDMP_INT;
+			setAttributes(&att, 1, NULL, &wret);
+			if (wret == WDMP_SUCCESS)
+			{
+				if (node == NULL) 
+				{
+					WalInfo("parameter: %s is not found in the globallist. Adding.\n", att.name);
+					addParamToGlobalList(att.name, DYNAMIC_PARAM, ON);
+					if (!writeDynamicParamToDBFile(att.name))
+					{
+						WalError("Write to DB file failed for '%s'\n", att.name);
+					}
+				}
+				else
+				{
+					updateParamStatus(node, ON);
+				}
+				resObj->retStatus[i] = wret;
+			} 
+			else 
+			{
+				resObj->retStatus[i] = WDMP_ERR_NOTIF_ON_FAILED;
+				WalError("setAttributes failed for '%s' ret:%d\n", param->value.s,wret);
+			}
+			WAL_FREE(att.name);
+            WAL_FREE(att.value);
+		}
+		else
+		{
+			WalInfo("Parameter %s is already subscribed. Skipping setAttributes.\n",param->value);
+			resObj->retStatus[i] = WDMP_SUCCESS;			
+		}
+    }
+
+    WalInfo("validate_method_req: Processed '%s' method\n", methodReq->methodName);
+    return;	
 }
