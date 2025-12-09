@@ -136,8 +136,8 @@ add_dependencies(libtrower-base64 trower-base64)
 #-------------------------------------------------------------------------------
 ExternalProject_Add(wdmp-c
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/wdmp-c
-    GIT_REPOSITORY https://github.com/Comcast/wdmp-c.git
-    GIT_TAG "f9f687b6b4b10c2b72341e792a64334f0a409848"
+    GIT_REPOSITORY https://github.com/nlrcomcast/wdmp-c.git
+    GIT_TAG "master"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
                   -DBUILD_TESTING=OFF
 )
@@ -257,6 +257,7 @@ ExternalProject_Add(dbus
     PREFIX ${PREFIX_DIR}/dbus
     GIT_REPOSITORY https://github.com/Distrotech/dbus.git
     GIT_TAG "f4606cf30763b5ae432c192cb589effc74336378"
+    UPDATE_COMMAND ""
     PATCH_COMMAND patch -p1 < ${PATCHES_DIR}/dbus.patch
     CONFIGURE_COMMAND COMMAND <SOURCE_DIR>/autogen.sh --enable-verbose-mode=no
                                                       --quiet
@@ -285,6 +286,7 @@ ExternalProject_Add(CcspCommonLibrary
     PREFIX ${PREFIX_DIR}/CcspCommonLibrary
     GIT_REPOSITORY https://github.com/rdkcmf/rdkb-CcspCommonLibrary.git
     GIT_TAG "a3117b5c45532a24507557886910cdaa9d0c411c"
+    UPDATE_COMMAND ""
     PATCH_COMMAND patch -p1 < ${PATCHES_DIR}/ccsp.patch
     CONFIGURE_COMMAND COMMAND <SOURCE_DIR>/autogen.sh --quiet CPPFLAGS=${CCSP_HEADERS}
                                                       --prefix=${INSTALL_DIR}

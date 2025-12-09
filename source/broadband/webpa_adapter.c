@@ -9,6 +9,7 @@
 #include "webpa_notification.h"
 #include "webpa_internal.h"
 #include "webpa_rbus.h"
+#include "webpa_eventing.h"
 #ifdef FEATURE_SUPPORT_WEBCONFIG
 #include <webcfg_generic.h>
 #endif
@@ -532,30 +533,44 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
 
                         case METHOD:
                         {
-                                WalInfo("Method Name is %s\n",reqObj->u.methodReq->methodName);
-                                WalInfo("Params are %s\n",reqObj->u.methodReq->params);
-
-                                if(strstr(reqObj->u.methodReq->methodName,WEBPA_NOTIFY_SUBSCRIPTION) == NULL)
+                                ret = validate_method_req(reqObj->u.methodReq);
+                                WalInfo("ret : %d\n",ret);
+                                if(ret == WDMP_SUCCESS)
                                 {
-                                        ProcessNotifyParamMethod(reqObj->u.methodReq->params);
+                                        WalInfo("Method Name is %s\n",reqObj->u.methodReq->methodName);
+                                        resObj->paramCnt = reqObj->u.methodReq->objectCnt;
+                                        WalInfo("Response:> paramCnt = %zu\n", resObj->paramCnt);
+                                        resObj->retStatus = calloc(resObj->paramCnt, sizeof(WDMP_STATUS));
+                                        resObj->u.paramRes = calloc(1, sizeof(param_res_t));
+                                        resObj->u.paramRes->params = calloc(resObj->paramCnt, sizeof(param_t));
+
+                                        if(strstr(reqObj->u.methodReq->methodName,WEBPA_NOTIFY_SUBSCRIPTION) == NULL)
+                                        {
+                                                if(!getBootupNotifyInitDone())
+                                                {
+                                                        resObj->retStatus[0] = WDMP_ERR_BOOTUP_IN_PROGRESS;
+                                                        WalInfo("Notification setup during Bootup is in Progress, rejecting method request\n");
+                                                        break;
+                                                }
+                                                ProcessNotifyParamMethod(reqObj->u.methodReq, resObj);
+                                        }
+                                        else
+                                        { //TODO: Implement method invocation
+                                                invokeMethod(reqObj->u.methodReq, resObj);
+                                        }
                                 }
                                 else
                                 {
-                                        ret = validate_method_req(reqObj->u.methodReq.methodName, reqObj->u.methodReq->params);
-                                        WalInfo("ret : %d\n",ret);
-                                        if(ret == WDMP_SUCCESS)
-                                        {
-                                                invokeMethod(reqObj->u.methodReq.methodName, reqObj->u.methodReq->params, &ret);
-                                                WalInfo("ret : %d\n",ret);
-                                        }
-                                        else
-                                        {
-                                                WalError("Method validations failed\n");
-                                        }
+                                        resObj->paramCnt = 1;
+                                        resObj->retStatus = calloc(resObj->paramCnt, sizeof(WDMP_STATUS));
+                                        resObj->u.paramRes = calloc(1, sizeof(param_res_t));
+                                        resObj->u.paramRes->params = calloc(resObj->paramCnt, sizeof(param_t));                                        
+                                        resObj->retStatus[0] = ret;
+                                        WalError("Method validations failed\n");
                                 }
-                                *resObj->retStatus = ret;
+                                WalInfo("Response:> retStatus = %d\n", *resObj->retStatus);
                         }
-                        break
+                        break;
 
                 }
         }

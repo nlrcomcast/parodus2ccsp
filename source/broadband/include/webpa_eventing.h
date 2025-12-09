@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "webpa_adapter.h"
 
 #ifdef BUILD_YOCTO
 #define NOTIFY_PARAM_FILE "/nvram/webpa_notify_param"
@@ -41,5 +42,6 @@ bool getBootupNotifyInitDone();
 g_NotifyParam* getGlobalNotifyHead();
 bool getParamStatus(g_NotifyParam *param);
 void updateParamStatus(g_NotifyParam *param, bool status);
-
+int validate_params(method_param_t *obj);
+void ProcessNotifyParamMethod(method_req_t *methodReq, res_struct *resObj);
 #endif // WEBPA_EVENTING_H

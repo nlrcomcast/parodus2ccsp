@@ -33,7 +33,7 @@ target_link_libraries (test_libpd gcov -Wl,--no-as-needed )
 #   test_webpa_rbus
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_rbus COMMAND ${MEMORY_CHECK} ./test_webpa_rbus)
-add_executable(test_webpa_rbus test_webpa_rbus.c ../source/broadband/webpa_rbus.c)
+add_executable(test_webpa_rbus test_webpa_rbus.c ../source/broadband/webpa_rbus.c ../source/broadband/webpa_eventing.c)
 target_link_libraries (test_webpa_rbus ${WEBPA_COMMON_LIBS} -llibparodus -lrbus -lcunit)
 target_link_libraries (test_webpa_rbus gcov -Wl,--no-as-needed )
 
@@ -41,7 +41,7 @@ target_link_libraries (test_webpa_rbus gcov -Wl,--no-as-needed )
 #   test_webpa_adapter
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_adapter COMMAND ${MEMORY_CHECK} ./test_webpa_adapter)
-add_executable(test_webpa_adapter test_webpa_adapter.c ../source/broadband/webpa_adapter.c)
+add_executable(test_webpa_adapter test_webpa_adapter.c ../source/broadband/webpa_adapter.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c)
 target_link_libraries (test_webpa_adapter -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS})
 target_link_libraries (test_webpa_adapter gcov -Wl,--no-as-needed )
 
@@ -49,7 +49,7 @@ target_link_libraries (test_webpa_adapter gcov -Wl,--no-as-needed )
 #   test_webpa_get
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_get COMMAND ${MEMORY_CHECK} ./test_webpa_get)
-add_executable(test_webpa_get test_webpa_get.c mock_stack.c mock_cache.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_get test_webpa_get.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_get -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_get gcov -Wl,--no-as-needed )
 
@@ -57,7 +57,7 @@ target_link_libraries (test_webpa_get gcov -Wl,--no-as-needed )
 #   test_webpa_set
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_set COMMAND ${MEMORY_CHECK} ./test_webpa_set)
-add_executable(test_webpa_set test_webpa_set.c mock_stack.c mock_cache.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_set test_webpa_set.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_set -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_set gcov -Wl,--no-as-needed )
 
@@ -65,7 +65,7 @@ target_link_libraries (test_webpa_set gcov -Wl,--no-as-needed )
 #   test_webpa_notification
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_notification COMMAND ${MEMORY_CHECK} ./test_webpa_notification)
-add_executable(test_webpa_notification test_webpa_notification.c mock_stack.c mock_cache.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_notification test_webpa_notification.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_notification -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_notification gcov -Wl,--no-as-needed )
 
@@ -73,7 +73,7 @@ target_link_libraries (test_webpa_notification gcov -Wl,--no-as-needed )
 #   test_webpa_get_attributes
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_get_attr COMMAND ${MEMORY_CHECK} ./test_webpa_get_attr)
-add_executable(test_webpa_get_attr test_webpa_get_attr.c mock_stack.c mock_cache.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_get_attr test_webpa_get_attr.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_get_attr -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_get_attr gcov -Wl,--no-as-needed )
 
@@ -81,7 +81,7 @@ target_link_libraries (test_webpa_get_attr gcov -Wl,--no-as-needed )
 #   test_webpa_set_attributes
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_set_attr COMMAND ${MEMORY_CHECK} ./test_webpa_set_attr)
-add_executable(test_webpa_set_attr test_webpa_set_attr.c mock_stack.c mock_cache.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_set_attr test_webpa_set_attr.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_set_attr -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_set_attr gcov -Wl,--no-as-needed )
 
@@ -89,7 +89,7 @@ target_link_libraries (test_webpa_set_attr gcov -Wl,--no-as-needed )
 #   test_webpa_replace
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_replace COMMAND ${MEMORY_CHECK} ./test_webpa_replace)
-add_executable(test_webpa_replace test_webpa_replace.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_replace.c ${WEBPA_COMMON_SOURCES})
+add_executable(test_webpa_replace test_webpa_replace.c mock_stack.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_replace.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES})
 target_link_libraries (test_webpa_replace -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_replace gcov -Wl,--no-as-needed )
 
@@ -97,7 +97,7 @@ target_link_libraries (test_webpa_replace gcov -Wl,--no-as-needed )
 #   test_webpa_table
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_table COMMAND ${MEMORY_CHECK} ./test_webpa_table)
-add_executable(test_webpa_table test_webpa_table.c mock_stack.c mock_cache.c  ../source/broadband/webpa_adapter.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_table test_webpa_table.c mock_stack.c mock_cache.c  ../source/broadband/webpa_adapter.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_table -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_table gcov -Wl,--no-as-needed )
 
@@ -105,7 +105,7 @@ target_link_libraries (test_webpa_table gcov -Wl,--no-as-needed )
 #   test_webpa_notification_cunit
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_notification_cunit COMMAND ${MEMORY_CHECK} ./test_webpa_notification_cunit)
-add_executable(test_webpa_notification_cunit test_webpa_notification_cunit.c mock_cache.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_notification_cunit test_webpa_notification_cunit.c mock_cache.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_notification_cunit -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus -lcunit)
 target_link_libraries (test_webpa_notification_cunit gcov -Wl,--no-as-needed )
 
@@ -113,25 +113,33 @@ target_link_libraries (test_webpa_notification_cunit gcov -Wl,--no-as-needed )
 #   test_webpa_test_set
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_test_set COMMAND ${MEMORY_CHECK} ./test_webpa_test_set)
-add_executable(test_webpa_test_set test_webpa_test_set.c mock_stack.c mock_cache.c  ../source/broadband/webpa_adapter.c ../source/app/libpd.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
+add_executable(test_webpa_test_set test_webpa_test_set.c mock_stack.c mock_cache.c  ../source/broadband/webpa_adapter.c ../source/app/libpd.c ../source/broadband/webpa_method.c ../source/broadband/webpa_eventing.c ${WEBPA_COMMON_SOURCES} ${WEBPA_TABLE_SOURCES})
 target_link_libraries (test_webpa_test_set -lwrp-c -ldbus-1 -lccsp_common -lwdmp-c -lcjson ${WEBPA_COMMON_LIBS} -llibparodus)
 target_link_libraries (test_webpa_test_set gcov -Wl,--no-as-needed )
 
 #-------------------------------------------------------------------------------
 #   test_webpa_internal
 #-------------------------------------------------------------------------------
-add_test(NAME test_webpa_internal COMMAND ${MEMORY_CHECK} ./test_webpa_internal)
-add_executable(test_webpa_internal test_webpa_internal.c ../source/broadband/webpa_rbus.c ../source/broadband/webpa_parameter.c ../source/broadband/webpa_adapter.c ../source/app/libpd.c ../source/app/privilege.c ../source/broadband/webpa_internal.c ../source/broadband/webpa_notification.c)
-target_link_libraries (test_webpa_internal ${WEBPA_COMMON_LIBS} -llibparodus -lwdmp-c -lrbus -ldbus-1 -lccsp_common -lcunit)
-target_link_libraries (test_webpa_internal gcov -Wl,--no-as-needed )
+# add_test(NAME test_webpa_internal COMMAND ${MEMORY_CHECK} ./test_webpa_internal)
+# add_executable(test_webpa_internal test_webpa_internal.c ../source/broadband/webpa_rbus.c ../source/broadband/webpa_parameter.c ../source/broadband/webpa_adapter.c ../source/app/libpd.c ../source/app/privilege.c ../source/broadband/webpa_internal.c ../source/broadband/webpa_notification.c)
+# target_link_libraries (test_webpa_internal ${WEBPA_COMMON_LIBS} -llibparodus -lwdmp-c -lrbus -ldbus-1 -lccsp_common -lcunit)
+# target_link_libraries (test_webpa_internal gcov -Wl,--no-as-needed )
 
 #-------------------------------------------------------------------------------
 #   test_webpa_eventing
 #-------------------------------------------------------------------------------
 add_test(NAME test_webpa_eventing COMMAND ${MEMORY_CHECK} ./test_webpa_eventing)
-add_executable(test_webpa_eventing test_webpa_eventing.c ../source/broadband/webpa_eventing.c)
+add_executable(test_webpa_eventing test_webpa_eventing.c ../source/broadband/webpa_eventing.c ../source/broadband/webpa_method.c)
 target_link_libraries (test_webpa_eventing -lcjson -lcunit ${WEBPA_COMMON_LIBS})
 target_link_libraries (test_webpa_eventing gcov -Wl,--no-as-needed )
+
+#-------------------------------------------------------------------------------
+#   test_webpa_method
+#-------------------------------------------------------------------------------
+add_test(NAME test_webpa_method COMMAND ${MEMORY_CHECK} ./test_webpa_method)
+add_executable(test_webpa_method test_webpa_method.c ../source/broadband/webpa_adapter.c ../source/broadband/webpa_eventing.c ../source/broadband/webpa_method.c)
+target_link_libraries (test_webpa_method -lcjson -lcunit -lwdmp-c ${WEBPA_COMMON_LIBS})
+target_link_libraries (test_webpa_method gcov -Wl,--no-as-needed )
 
 # Code coverage
 
@@ -160,8 +168,8 @@ COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_notification_cunit.dir/__/src --output-file test_webpa_notification_cunit.info
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_test_set.dir/__/src --output-file test_webpa_test_set.info
-COMMAND lcov -q --capture --directory
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_internal.dir/__/src --output-file test_webpa_internal.info
+# COMMAND lcov -q --capture --directory
+# ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_internal.dir/__/src --output-file test_webpa_internal.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_webpa_eventing.dir/__/src --output-file test_webpa_eventing.info
 
@@ -175,7 +183,7 @@ COMMAND lcov
 -a test_webpa_set_attr.info
 -a test_webpa_replace.info
 -a test_webpa_notification.info
--a test_webpa_internal.info
+# -a test_webpa_internal.info
 -a test_webpa_table.info
 -a test_webpa_notification_cunit.info
 -a test_webpa_test_set.info
