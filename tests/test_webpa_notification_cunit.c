@@ -43,6 +43,11 @@ ANSC_HANDLE bus_handle;
 extern int numLoops;
 extern pthread_cond_t con;
 
+rbusHandle_t get_webpa_rbus_Handle(void)
+{
+     return NULL;
+}
+
 void clearTraceContext()
 {
 

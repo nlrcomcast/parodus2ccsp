@@ -9,6 +9,7 @@
 #include "webpa_notification.h"
 #include "webpa_internal.h"
 #include "webpa_rbus.h"
+#include "webpa_eventing.h"
 #ifdef FEATURE_SUPPORT_WEBCONFIG
 #include <webcfg_generic.h>
 #endif
@@ -532,30 +533,37 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
 
                         case METHOD:
                         {
-                                WalInfo("Method Name is %s\n",reqObj->u.methodReq->methodName);
-                                WalInfo("Params are %s\n",reqObj->u.methodReq->params);
-
-                                if(strstr(reqObj->u.methodReq->methodName,WEBPA_NOTIFY_SUBSCRIPTION) == NULL)
+                                resObj->u.methodRes = calloc(1, sizeof(method_res_t));
+                                ret = validate_method_req(reqObj->u.methodReq);
+                                if(ret == WDMP_SUCCESS)
                                 {
-                                        ProcessNotifyParamMethod(reqObj->u.methodReq->params);
-                                }
-                                else
-                                {
-                                        ret = validate_method_req(reqObj->u.methodReq.methodName, reqObj->u.methodReq->params);
-                                        WalInfo("ret : %d\n",ret);
-                                        if(ret == WDMP_SUCCESS)
+                                        WalInfo("Method Name is %s\n",reqObj->u.methodReq->methodName);
+                                        if(strcmp(reqObj->u.methodReq->methodName,WEBPA_NOTIFY_SUBSCRIPTION) == NULL)
                                         {
-                                                invokeMethod(reqObj->u.methodReq.methodName, reqObj->u.methodReq->params, &ret);
-                                                WalInfo("ret : %d\n",ret);
+
+                                                if(!getBootupNotifyInitDone())
+                                                {
+                                                        resObj->u.methodRes->statusCode = WDMP_ERR_BOOTUP_IN_PROGRESS;
+                                                        resObj->u.methodRes->message = strdup("Notification setup during Bootup is in Progress, rejecting method request");
+                                                        WalInfo("Notification setup during Bootup is in Progress, rejecting method request\n");
+                                                        break;
+                                                }
+                                                ProcessNotifyParamMethod(reqObj->u.methodReq, resObj);
                                         }
                                         else
                                         {
-                                                WalError("Method validations failed\n");
+                                                invokeMethod(reqObj->u.methodReq, resObj);
                                         }
                                 }
-                                *resObj->retStatus = ret;
+                                else
+                                {
+                                        resObj->u.methodRes->statusCode = ret;
+                                        resObj->u.methodRes->message = strdup("Invalid method name. Method names must end with ()");
+                                        WalError("Method validations failed\n");
+                                }
+                                WalInfo("Response:> retStatus = %d\n", resObj->u.methodRes->statusCode);
                         }
-                        break
+                        break;
 
                 }
         }

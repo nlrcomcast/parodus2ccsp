@@ -14,7 +14,7 @@
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_ANSC_LINUX ")
 set(WEBCONFIG_PATCH "${PATCHES_DIR}/Web_config_XML.patch")
-set(SOURCES broadband/ssp_messagebus_interface.c broadband/ssp_main.c broadband/ssp_action.c broadband/cosa_webpa_dml.c broadband/cosa_webpa_internal.c broadband/cosa_webpa_apis.c broadband/plugin_main.c broadband/plugin_main_apis.c broadband/webpa_adapter.c broadband/webpa_internal.c broadband/webpa_table.c broadband/webpa_replace.c broadband/webpa_parameter.c broadband/webpa_attribute.c broadband/webpa_notification.c app/main.c app/libpd.c app/privilege.c broadband/webpa_rbus.c broadband/webpa_eventing.c)
+set(SOURCES broadband/ssp_messagebus_interface.c broadband/ssp_main.c broadband/ssp_action.c broadband/cosa_webpa_dml.c broadband/cosa_webpa_internal.c broadband/cosa_webpa_apis.c broadband/plugin_main.c broadband/plugin_main_apis.c broadband/webpa_adapter.c broadband/webpa_internal.c broadband/webpa_table.c broadband/webpa_replace.c broadband/webpa_parameter.c broadband/webpa_attribute.c broadband/webpa_notification.c app/main.c app/libpd.c app/privilege.c broadband/webpa_rbus.c broadband/webpa_eventing.c broadband/webpa_method.c)
 
 if (BUILD_YOCTO)
 set(SOURCES ${SOURCES} broadband/dm_pack_datamodel.c)
@@ -37,7 +37,7 @@ endif()
 endif()
 set(HEADERS app/libpd.h)
 add_executable(webpa ${SOURCES} ${HEADERS})
-set(COMMON_LIBS -ldbus-1 -lccsp_common -lwrp-c -lpthread -lwdmp-c -lmsgpackc -ltrower-base64 -lm -lnanomsg -lcjson -lrt -luuid -llibparodus -lcimplog -lrbus)
+set(COMMON_LIBS -lccsp_common -ldbus-1 -lwrp-c -lpthread -lwdmp-c -lmsgpackc -ltrower-base64 -lm -lcjson -lrt -luuid -llibparodus -lnanomsg -lcimplog -lrbus)
 if (BUILD_YOCTO)
 set(COMMON_LIBS "${COMMON_LIBS} -llog4c -lrdkloggers -lprint_uptime")
 endif()

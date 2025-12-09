@@ -64,6 +64,11 @@ extern int g_syncNotifyInProgress;
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
+rbusHandle_t get_webpa_rbus_Handle(void)
+{
+     return NULL;
+}
+
 int libparodus_send (libpd_instance_t instance, wrp_msg_t *msg)
 {
     UNUSED(instance);

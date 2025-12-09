@@ -40,6 +40,11 @@ WDMP_STATUS status;
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
+rbusHandle_t get_webpa_rbus_Handle(void)
+{
+     return NULL;
+}
+
 rbusError_t getTraceContext(char* traceContext[])
 {
     UNUSED(traceContext);
