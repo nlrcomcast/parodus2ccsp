@@ -73,8 +73,8 @@ static void connect_parodus()
 	{	
 		libpd_cfg_t cfg1 = {.service_name = "config",
 					.receive = true, .keepalive_timeout_secs = 64,
-					.parodus_url = parodus_url,
-					.client_url = client_url
+					.parodus_url = strdup(parodus_url),
+					.client_url = strdup(client_url)
 				   };
 	            
 	    	WalPrint("libparodus_init with parodus url %s and client url %s\n",cfg1.parodus_url,cfg1.client_url);
@@ -133,6 +133,9 @@ static void connect_parodus()
 	            WalPrint("libparodus_shutdown retval %d\n", retval);
 	    	}
 	}
+	/* CID-71358 CID-55326 Resource leak fix */
+		WAL_FREE(parodus_url);
+		WAL_FREE(client_url);	
 }
 
 //set global conn status and to awake waiting getter threads
