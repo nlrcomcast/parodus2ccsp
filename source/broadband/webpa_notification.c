@@ -1379,7 +1379,7 @@ void processNotification(NotifyData *notifyData)
 					char *param_string = cJSON_PrintUnformatted(parameter);
 					if(param_string != NULL)
 					{
-						strncpy(param_notify_string,param_string,sizeof(param_notify_string));
+						snprintf(param_notify_string, sizeof(param_notify_string), "%s", param_string);
 						WAL_FREE(param_string);
 					}
 					else
