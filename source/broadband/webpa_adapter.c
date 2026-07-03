@@ -36,7 +36,7 @@ static WDMP_STATUS set_cmc_and_cid(char *dbCMC, char *cid, int isNew);
 static WDMP_STATUS validate_table_object(table_req_t *tableObj);
 static void setRebootReason(param_t param, WEBPA_SET_TYPE setType);
 static int isOperateRequest(set_req_t *setReq);
-static void formOperateResponse(const char *encodedResult, WDMP_STATUS status, char **resPayload);
+static void formOperateResponse(const char *methodName, const char *encodedMessage, WDMP_STATUS status, char **resPayload);
 
 extern ANSC_HANDLE bus_handle;
 /*----------------------------------------------------------------------------*/
@@ -263,6 +263,7 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                 if(reqObj->reqType == SET && isOperateRequest(reqObj->u.setReq))
                                 {
                                         char *operateResult = NULL;
+                                        char *operateMethod = NULL;
                                         WDMP_STATUS operateStatus = WDMP_FAILURE;
                                         int opIndex = 0;
 
@@ -272,15 +273,19 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                                    strcmp(reqObj->u.setReq->param[opIndex].name, WEBPA_OPERATE_PARAM_NAME) == 0)
                                                 {
                                                         WalInfo("Handling WebPA OPERATE request\n");
-                                                        operateStatus = webpaRbusOperate(reqObj->u.setReq->param[opIndex].value, &operateResult);
+                                                        operateStatus = webpaRbusOperate(reqObj->u.setReq->param[opIndex].value, &operateMethod, &operateResult);
                                                         break;
                                                 }
                                         }
 
-                                        formOperateResponse(operateResult, operateStatus, resPayload);
+                                        formOperateResponse(operateMethod, operateResult, operateStatus, resPayload);
                                         if(operateResult != NULL)
                                         {
                                                 free(operateResult);
+                                        }
+                                        if(operateMethod != NULL)
+                                        {
+                                                free(operateMethod);
                                         }
                                         WalPrint("Response:> Payload = %s\n", *resPayload);
                                         wdmp_free_req_struct(reqObj);
@@ -623,15 +628,19 @@ static int isOperateRequest(set_req_t *setReq)
  *        request using the standard SET response shape.
  *
  * The response mirrors a SET response: a single "parameters" entry whose "name"
- * is the reserved RDK.Operate name and whose "message" carries the
- * base64-encoded method result (on success) or a failure description, together
- * with an overall "statusCode".
+ * is the invoked method name (echoed from the decoded payload, falling back to
+ * the reserved RDK.Operate name when it could not be determined) and whose
+ * "message" carries the base64-encoded JSON envelope produced by
+ * webpaRbusOperate ({"result":...} on success, {"error":...} on failure),
+ * together with an overall "statusCode".
  *
- * @param[in]  encodedResult base64-encoded JSON result (NULL on failure)
- * @param[in]  status        the WDMP status of the invocation
- * @param[out] resPayload    receives a newly allocated JSON payload string
+ * @param[in]  methodName    invoked method name for the response "name" field
+ *                           (NULL falls back to RDK.Operate).
+ * @param[in]  encodedMessage base64-encoded JSON result/error envelope.
+ * @param[in]  status        the WDMP status of the invocation.
+ * @param[out] resPayload    receives a newly allocated JSON payload string.
  */
-static void formOperateResponse(const char *encodedResult, WDMP_STATUS status, char **resPayload)
+static void formOperateResponse(const char *methodName, const char *encodedMessage, WDMP_STATUS status, char **resPayload)
 {
         cJSON *response = NULL;
         cJSON *parameters = NULL;
@@ -652,15 +661,8 @@ static void formOperateResponse(const char *encodedResult, WDMP_STATUS status, c
 
         cJSON_AddItemToObject(response, "parameters", parameters = cJSON_CreateArray());
         cJSON_AddItemToArray(parameters, paramObj = cJSON_CreateObject());
-        cJSON_AddStringToObject(paramObj, "name", WEBPA_OPERATE_PARAM_NAME);
-        if(status == WDMP_SUCCESS && encodedResult != NULL)
-        {
-                cJSON_AddStringToObject(paramObj, "message", encodedResult);
-        }
-        else
-        {
-                cJSON_AddStringToObject(paramObj, "message", "Method invocation failed");
-        }
+        cJSON_AddStringToObject(paramObj, "name", (methodName != NULL) ? methodName : WEBPA_OPERATE_PARAM_NAME);
+        cJSON_AddStringToObject(paramObj, "message", (encodedMessage != NULL) ? encodedMessage : "");
         cJSON_AddNumberToObject(response, "statusCode", statusCode);
 
         *resPayload = cJSON_PrintUnformatted(response);

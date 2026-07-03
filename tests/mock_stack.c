@@ -59,12 +59,18 @@ rbusError_t setTraceContext(char* traceContext[])
 
 /* Mock for the WebPA OPERATE entry point so SET-path tests can exercise the
  * RDK.Operate routing/response logic in webpa_adapter.c without a live RBUS.
- * The test controls the returned status via will_return(webpaRbusOperate, ...)
- * and the base64 result string via will_return(webpaRbusOperate, ...). */
-WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **result)
+ * The test controls the invoked method name, the base64 message string, and the
+ * returned status via successive will_return(webpaRbusOperate, ...) calls (in
+ * that order). */
+WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **methodName, char **result)
 {
     UNUSED(encodedValue);
     function_called();
+    if(methodName != NULL)
+    {
+        char *mockMethod = (char *) mock();
+        *methodName = (mockMethod != NULL) ? strdup(mockMethod) : NULL;
+    }
     if(result != NULL)
     {
         char *mockResult = (char *) mock();

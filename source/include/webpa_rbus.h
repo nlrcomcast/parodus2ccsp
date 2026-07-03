@@ -10,6 +10,7 @@
 #include "webpa_adapter.h"
 #include <wdmp-c.h>
 #include <cimplog.h>
+#include <cJSON.h>
 
 
 bool isRbusEnabled();
@@ -27,6 +28,14 @@ rbusError_t clearTraceContext();
 
 /* Maximum accepted size (in bytes) of the base64-decoded RDK.Operate payload. */
 #define WEBPA_OPERATE_MAX_PAYLOAD_SIZE (64 * 1024)
+
+/* JSON-RPC error codes returned inside the OPERATE response "message" (base64
+ * of {"error":{"code":<code>,"data":<data>}}). Taken from the JSON-RPC spec. */
+#define OPERATE_JSONRPC_PARSE_ERROR      (-32700) /* base64 decode or JSON parse failed */
+#define OPERATE_JSONRPC_INVALID_REQUEST  (-32600) /* request not valid / properly formatted */
+#define OPERATE_JSONRPC_METHOD_NOT_FOUND (-32601) /* no rbus provider provides this method */
+#define OPERATE_JSONRPC_INVALID_PARAMS   (-32602) /* provider returned RBUS_ERROR_INVALID_INPUT */
+#define OPERATE_JSONRPC_INTERNAL_ERROR   (-32603) /* catch-all internal failure */
 
 /**
  * @brief Build a flat rbusObject_t from a decoded params.parameters cJSON object.
@@ -60,16 +69,21 @@ rbusError_t webpaRbusMethodInvoke(const char *methodName, rbusObject_t inParams,
  * @brief Handle a WebPA OPERATE request end to end.
  *
  * Base64-decodes the RDK.Operate value, parses the JSON, builds flat inParams,
- * invokes the target method synchronously, and serializes the method outParams
- * to a base64-encoded JSON string returned via @p result. Every allocation made
- * internally is freed before returning.
+ * invokes the target method synchronously, and produces a base64-encoded JSON
+ * "message" for the response. On success the message wraps the method outParams
+ * as {"result": {...}}; on failure it wraps a JSON-RPC error as
+ * {"error": {"code": <code>, "data": <data>}}. The invoked method name is also
+ * returned so the response "name" field can echo it. Every internal allocation
+ * is freed before returning.
  *
  * @param encodedValue base64-encoded JSON payload from the RDK.Operate parameter.
+ * @param methodName   out param receiving a newly allocated copy of the invoked
+ *                     method name (caller frees), or NULL when it could not be
+ *                     determined (e.g. decode/parse failure).
  * @param result       out param receiving a newly allocated, base64-encoded JSON
- *                     result string on success (caller frees). Set to NULL on
- *                     failure.
+ *                     message (caller frees) for both success and failure.
  * @return WDMP_SUCCESS on success, a WDMP failure status otherwise.
  */
-WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **result);
+WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **methodName, char **result);
 
 #endif

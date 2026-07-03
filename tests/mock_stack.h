@@ -38,7 +38,7 @@ parameterAttributeStruct_t ** get_global_attributes();
 void clearTraceContext();
 rbusError_t getTraceContext(char* traceContext[]);
 rbusError_t setTraceContext(char* traceContext[]);
-WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **result);
+WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **methodName, char **result);
 
 #endif
 

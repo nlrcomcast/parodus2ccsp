@@ -6,6 +6,28 @@
 #include "../source/include/webpa_rbus.h"
 rbusHandle_t handle;
 
+/* Stubs for the parodus/notification symbols referenced by the asynchronous
+ * OPERATE path. test_webpa_rbus links only webpa_rbus.c, so these are provided
+ * locally; they are not exercised while the bus is uninitialized. */
+char deviceMAC[32] = "112233445566";
+void getDeviceMac()
+{
+}
+
+void sendNotification(char *payload, char *source, char *destination)
+{
+    WalInfo("stub sendNotification dest=%s\n", (destination != NULL) ? destination : "NULL");
+    if(payload != NULL)
+    {
+        free(payload);
+    }
+    if(source != NULL)
+    {
+        free(source);
+    }
+}
+
+
 // Test case for isRbusEnabled
 void test_isRbusEnabled_success()
 {
@@ -151,18 +173,26 @@ void test_buildOperateInParams_empty()
     }
 }
 
-/* Invalid base64 in the RDK.Operate value is rejected without invoking RBUS. */
+/* Invalid base64 in the RDK.Operate value is rejected without invoking RBUS and
+ * yields a base64 error envelope (no method name resolved). */
 void test_webpaRbusOperate_invalid_base64()
 {
     WalInfo("\n**************************************************\n");
-    char *result = (char *) 0x1; /* ensure it is cleared to NULL */
-    WDMP_STATUS status = webpaRbusOperate("!!!not-base64!!!", &result);
+    char *method = (char *) 0x1; /* ensure it is cleared to NULL */
+    char *result = (char *) 0x1; /* ensure it is set to an error envelope */
+    WDMP_STATUS status = webpaRbusOperate("!!!not-base64!!!", &method, &result);
 
     CU_ASSERT_NOT_EQUAL(status, WDMP_SUCCESS);
-    CU_ASSERT_PTR_NULL(result);
+    CU_ASSERT_PTR_NULL(method);
+    CU_ASSERT_PTR_NOT_NULL(result);
+    if(result != NULL)
+    {
+        free(result);
+    }
 }
 
-/* A decoded payload lacking a 'method' field is rejected without invoking RBUS. */
+/* A decoded payload lacking a 'method' field is rejected without invoking RBUS;
+ * an error envelope is produced and no method name is resolved. */
 void test_webpaRbusOperate_missing_method()
 {
     WalInfo("\n**************************************************\n");
@@ -170,13 +200,19 @@ void test_webpaRbusOperate_missing_method()
     const char *jsonNoMethod = "{\"params\":{\"parameters\":{}}}";
     size_t encLen = 0;
     char *encoded = b64_encode_with_alloc((const uint8_t *) jsonNoMethod, strlen(jsonNoMethod), &encLen);
+    char *method = NULL;
     char *result = NULL;
     WDMP_STATUS status;
 
     CU_ASSERT_PTR_NOT_NULL(encoded);
-    status = webpaRbusOperate(encoded, &result);
+    status = webpaRbusOperate(encoded, &method, &result);
     CU_ASSERT_NOT_EQUAL(status, WDMP_SUCCESS);
-    CU_ASSERT_PTR_NULL(result);
+    CU_ASSERT_PTR_NULL(method);
+    CU_ASSERT_PTR_NOT_NULL(result);
+    if(result != NULL)
+    {
+        free(result);
+    }
     if(encoded != NULL)
     {
         free(encoded);
@@ -184,21 +220,69 @@ void test_webpaRbusOperate_missing_method()
 }
 
 /* A well-formed payload whose method cannot be invoked (bus not initialized)
- * maps to a WDMP failure status rather than success. */
+ * maps to a WDMP failure status, echoes the method name, and returns an error
+ * envelope. */
 void test_webpaRbusOperate_invoke_failure_maps_to_failure()
 {
     WalInfo("\n**************************************************\n");
     const char *validJson = "{\"method\":\"Device.NoSuchMethod()\",\"params\":{\"parameters\":{}}}";
     size_t encLen = 0;
     char *encoded = b64_encode_with_alloc((const uint8_t *) validJson, strlen(validJson), &encLen);
+    char *method = NULL;
     char *result = NULL;
     WDMP_STATUS status;
 
     CU_ASSERT_PTR_NOT_NULL(encoded);
     webpaRbus_Uninit();
-    status = webpaRbusOperate(encoded, &result);
+    status = webpaRbusOperate(encoded, &method, &result);
     CU_ASSERT_NOT_EQUAL(status, WDMP_SUCCESS);
-    CU_ASSERT_PTR_NULL(result);
+    CU_ASSERT_PTR_NOT_NULL(method);
+    if(method != NULL)
+    {
+        CU_ASSERT_STRING_EQUAL(method, "Device.NoSuchMethod()");
+        free(method);
+    }
+    CU_ASSERT_PTR_NOT_NULL(result);
+    if(result != NULL)
+    {
+        free(result);
+    }
+    if(encoded != NULL)
+    {
+        free(encoded);
+    }
+}
+
+/* A payload carrying rspDestination selects the asynchronous path. With the bus
+ * uninitialized the async invoke cannot proceed, so it returns a failure status
+ * with a base64 error envelope while still echoing the method name. */
+void test_webpaRbusOperate_async_rspDestination()
+{
+    WalInfo("\n**************************************************\n");
+    const char *asyncJson = "{\"method\":\"Device.WiFi.CsiData.StartStream()\","
+                            "\"params\":{\"parameters\":{}},"
+                            "\"rspDestination\":\"event:some-dest/thing\"}";
+    size_t encLen = 0;
+    char *encoded = b64_encode_with_alloc((const uint8_t *) asyncJson, strlen(asyncJson), &encLen);
+    char *method = NULL;
+    char *result = NULL;
+    WDMP_STATUS status;
+
+    CU_ASSERT_PTR_NOT_NULL(encoded);
+    webpaRbus_Uninit();
+    status = webpaRbusOperate(encoded, &method, &result);
+    CU_ASSERT_NOT_EQUAL(status, WDMP_SUCCESS);
+    CU_ASSERT_PTR_NOT_NULL(method);
+    if(method != NULL)
+    {
+        CU_ASSERT_STRING_EQUAL(method, "Device.WiFi.CsiData.StartStream()");
+        free(method);
+    }
+    CU_ASSERT_PTR_NOT_NULL(result);
+    if(result != NULL)
+    {
+        free(result);
+    }
     if(encoded != NULL)
     {
         free(encoded);
@@ -221,6 +305,7 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "test webpaRbusOperate_invalid_base64", test_webpaRbusOperate_invalid_base64);
     CU_add_test( *suite, "test webpaRbusOperate_missing_method", test_webpaRbusOperate_missing_method);
     CU_add_test( *suite, "test webpaRbusOperate_invoke_failure_maps_to_failure", test_webpaRbusOperate_invoke_failure_maps_to_failure);
+    CU_add_test( *suite, "test webpaRbusOperate_async_rspDestination", test_webpaRbusOperate_async_rspDestination);
 }
 
 

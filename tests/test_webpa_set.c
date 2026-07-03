@@ -1124,7 +1124,9 @@ void test_operate_routes_and_returns_result()
     headers_t *res_headers = NULL;
     headers_t *req_headers = NULL;
 
-    /* Mock a successful invocation returning a base64 result string. */
+    /* Mock a successful invocation returning the invoked method name and a
+     * base64 {"result":...} message string. */
+    will_return(webpaRbusOperate, "Device.WiFi.CsiData.StartStream()");
     will_return(webpaRbusOperate, "eyJyZXN1bHQiOiJvayJ9");
     will_return(webpaRbusOperate, WDMP_SUCCESS);
     expect_function_call(webpaRbusOperate);
@@ -1139,7 +1141,7 @@ void test_operate_routes_and_returns_result()
     assert_non_null(paramArray);
     assert_int_equal(1, cJSON_GetArraySize(paramArray));
     resParamObj = cJSON_GetArrayItem(paramArray, 0);
-    assert_string_equal("RDK.Operate", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
+    assert_string_equal("Device.WiFi.CsiData.StartStream()", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
     assert_string_equal("eyJyZXN1bHQiOiJvayJ9", cJSON_GetObjectItem(resParamObj, "message")->valuestring);
     assert_int_equal(200, cJSON_GetObjectItem(response, "statusCode")->valueint);
     cJSON_Delete(response);
@@ -1147,17 +1149,19 @@ void test_operate_routes_and_returns_result()
 }
 
 /* When webpaRbusOperate reports failure (e.g. invalid base64 / missing method),
- * the response carries a failure statusCode and no leaked result. */
+ * the response carries a failure statusCode, the reserved RDK.Operate name (no
+ * method was resolved), and the base64 error envelope as the message. */
 void test_operate_failure_maps_to_failure_status()
 {
     char *reqPayload = "{\"parameters\":[{\"name\":\"RDK.Operate\",\"value\":\"bad\",\"dataType\":5}],\"command\":\"SET\"}";
     char *resPayload = NULL;
-    cJSON *response = NULL;
+    cJSON *response = NULL, *paramArray = NULL, *resParamObj = NULL;
     headers_t *res_headers = NULL;
     headers_t *req_headers = NULL;
 
-    /* Mock a failed invocation (no result string). */
+    /* Mock a failed invocation: no method name, a base64 error envelope. */
     will_return(webpaRbusOperate, NULL);
+    will_return(webpaRbusOperate, "eyJlcnJvciI6eyJjb2RlIjotMzI3MDB9fQ==");
     will_return(webpaRbusOperate, WDMP_ERR_INVALID_INPUT_PARAMETER);
     expect_function_call(webpaRbusOperate);
 
@@ -1167,6 +1171,10 @@ void test_operate_failure_maps_to_failure_status()
     assert_non_null(resPayload);
     response = cJSON_Parse(resPayload);
     assert_non_null(response);
+    paramArray = cJSON_GetObjectItem(response, "parameters");
+    resParamObj = cJSON_GetArrayItem(paramArray, 0);
+    assert_string_equal("RDK.Operate", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
+    assert_string_equal("eyJlcnJvciI6eyJjb2RlIjotMzI3MDB9fQ==", cJSON_GetObjectItem(resParamObj, "message")->valuestring);
     assert_int_equal(520, cJSON_GetObjectItem(response, "statusCode")->valueint);
     cJSON_Delete(response);
     free(resPayload);
@@ -1182,6 +1190,7 @@ void test_operate_ignores_datatype_for_routing()
     headers_t *res_headers = NULL;
     headers_t *req_headers = NULL;
 
+    will_return(webpaRbusOperate, "Device.X()");
     will_return(webpaRbusOperate, "eyJyZXN1bHQiOiJvayJ9");
     will_return(webpaRbusOperate, WDMP_SUCCESS);
     expect_function_call(webpaRbusOperate);
@@ -1194,7 +1203,40 @@ void test_operate_ignores_datatype_for_routing()
     assert_non_null(response);
     paramArray = cJSON_GetObjectItem(response, "parameters");
     resParamObj = cJSON_GetArrayItem(paramArray, 0);
-    assert_string_equal("RDK.Operate", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
+    assert_string_equal("Device.X()", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
+    assert_int_equal(200, cJSON_GetObjectItem(response, "statusCode")->valueint);
+    cJSON_Delete(response);
+    free(resPayload);
+}
+
+/* Asynchronous OPERATE (payload carries rspDestination): webpaRbusOperate
+ * returns an immediate base64 acknowledgment which the adapter returns inline
+ * with statusCode 200 and the invoked method name. The actual result is
+ * delivered later to rspDestination (handled inside webpaRbusOperate). */
+void test_operate_async_returns_ack()
+{
+    char *reqPayload = "{\"parameters\":[{\"name\":\"RDK.Operate\",\"value\":\"eyJtZXRob2QiOiJEZXZpY2UuWCgpIiwicnNwRGVzdGluYXRpb24iOiJldmVudDpkL3QifQ==\",\"dataType\":5}],\"command\":\"SET\"}";
+    char *resPayload = NULL;
+    cJSON *response = NULL, *paramArray = NULL, *resParamObj = NULL;
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
+
+    /* base64 of {"result":{"status":"accepted"}} */
+    will_return(webpaRbusOperate, "Device.WiFi.CsiData.StartStream()");
+    will_return(webpaRbusOperate, "eyJyZXN1bHQiOnsic3RhdHVzIjoiYWNjZXB0ZWQifX0=");
+    will_return(webpaRbusOperate, WDMP_SUCCESS);
+    expect_function_call(webpaRbusOperate);
+
+    processRequest(reqPayload, NULL, &resPayload, req_headers, res_headers);
+    WalInfo("resPayload : %s\n", resPayload);
+
+    assert_non_null(resPayload);
+    response = cJSON_Parse(resPayload);
+    assert_non_null(response);
+    paramArray = cJSON_GetObjectItem(response, "parameters");
+    resParamObj = cJSON_GetArrayItem(paramArray, 0);
+    assert_string_equal("Device.WiFi.CsiData.StartStream()", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
+    assert_string_equal("eyJyZXN1bHQiOnsic3RhdHVzIjoiYWNjZXB0ZWQifX0=", cJSON_GetObjectItem(resParamObj, "message")->valuestring);
     assert_int_equal(200, cJSON_GetObjectItem(response, "statusCode")->valueint);
     cJSON_Delete(response);
     free(resPayload);
@@ -1231,7 +1273,8 @@ int main(void)
 		cmocka_unit_test(err_setValues),
 		cmocka_unit_test(test_operate_routes_and_returns_result),
 		cmocka_unit_test(test_operate_failure_maps_to_failure_status),
-		cmocka_unit_test(test_operate_ignores_datatype_for_routing)
+		cmocka_unit_test(test_operate_ignores_datatype_for_routing),
+		cmocka_unit_test(test_operate_async_returns_ack)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
