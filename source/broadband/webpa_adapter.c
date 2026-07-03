@@ -9,6 +9,7 @@
 #include "webpa_notification.h"
 #include "webpa_internal.h"
 #include "webpa_rbus.h"
+#include <cJSON.h>
 #ifdef FEATURE_SUPPORT_WEBCONFIG
 #include <webcfg_generic.h>
 #endif
@@ -34,6 +35,8 @@ static WDMP_STATUS validate_cmc_and_cid(test_set_req_t *testSetReq, char *dbCMC,
 static WDMP_STATUS set_cmc_and_cid(char *dbCMC, char *cid, int isNew);
 static WDMP_STATUS validate_table_object(table_req_t *tableObj);
 static void setRebootReason(param_t param, WEBPA_SET_TYPE setType);
+static int isOperateRequest(set_req_t *setReq);
+static void formOperateResponse(const char *encodedResult, WDMP_STATUS status, char **resPayload);
 
 extern ANSC_HANDLE bus_handle;
 /*----------------------------------------------------------------------------*/
@@ -253,6 +256,39 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                         case SET_ATTRIBUTES:
                         {
                                 WalPrint("Request:> ParamCount = %zu\n",reqObj->u.setReq->paramCnt);
+
+                                /* OPERATE: a SET carrying a parameter named RDK.Operate is a
+                                 * method invocation, not a parameter write. Detection is by
+                                 * name only; dataType is ignored. */
+                                if(reqObj->reqType == SET && isOperateRequest(reqObj->u.setReq))
+                                {
+                                        char *operateResult = NULL;
+                                        WDMP_STATUS operateStatus = WDMP_FAILURE;
+                                        int opIndex = 0;
+
+                                        for(opIndex = 0; opIndex < (int)reqObj->u.setReq->paramCnt; opIndex++)
+                                        {
+                                                if(reqObj->u.setReq->param[opIndex].name != NULL &&
+                                                   strcmp(reqObj->u.setReq->param[opIndex].name, WEBPA_OPERATE_PARAM_NAME) == 0)
+                                                {
+                                                        WalInfo("Handling WebPA OPERATE request\n");
+                                                        operateStatus = webpaRbusOperate(reqObj->u.setReq->param[opIndex].value, &operateResult);
+                                                        break;
+                                                }
+                                        }
+
+                                        formOperateResponse(operateResult, operateStatus, resPayload);
+                                        if(operateResult != NULL)
+                                        {
+                                                free(operateResult);
+                                        }
+                                        WalPrint("Response:> Payload = %s\n", *resPayload);
+                                        wdmp_free_req_struct(reqObj);
+                                        wdmp_free_res_struct(resObj);
+                                        WalPrint("************** processRequest *****************\n");
+                                        return;
+                                }
+
                                 resObj->paramCnt = reqObj->u.setReq->paramCnt;
                                 WalPrint("Response:> paramCnt = %zu\n", resObj->paramCnt);
                                 resObj->retStatus = (WDMP_STATUS *) malloc(sizeof(WDMP_STATUS)*resObj->paramCnt);
@@ -556,6 +592,80 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
+
+/**
+ * @brief isOperateRequest reports whether a SET request carries the reserved
+ *        RDK.Operate parameter (name-only match; dataType is ignored).
+ *
+ * @param[in] setReq the SET request object
+ * @return 1 if an RDK.Operate parameter is present, 0 otherwise
+ */
+static int isOperateRequest(set_req_t *setReq)
+{
+        int i = 0;
+        if(setReq == NULL || setReq->param == NULL)
+        {
+                return 0;
+        }
+        for(i = 0; i < (int)setReq->paramCnt; i++)
+        {
+                if(setReq->param[i].name != NULL &&
+                   strcmp(setReq->param[i].name, WEBPA_OPERATE_PARAM_NAME) == 0)
+                {
+                        return 1;
+                }
+        }
+        return 0;
+}
+
+/**
+ * @brief formOperateResponse builds the WebPA response payload for an OPERATE
+ *        request using the standard SET response shape.
+ *
+ * The response mirrors a SET response: a single "parameters" entry whose "name"
+ * is the reserved RDK.Operate name and whose "message" carries the
+ * base64-encoded method result (on success) or a failure description, together
+ * with an overall "statusCode".
+ *
+ * @param[in]  encodedResult base64-encoded JSON result (NULL on failure)
+ * @param[in]  status        the WDMP status of the invocation
+ * @param[out] resPayload    receives a newly allocated JSON payload string
+ */
+static void formOperateResponse(const char *encodedResult, WDMP_STATUS status, char **resPayload)
+{
+        cJSON *response = NULL;
+        cJSON *parameters = NULL;
+        cJSON *paramObj = NULL;
+        int statusCode = (status == WDMP_SUCCESS) ? 200 : 520;
+
+        if(resPayload == NULL)
+        {
+                return;
+        }
+
+        response = cJSON_CreateObject();
+        if(response == NULL)
+        {
+                *resPayload = NULL;
+                return;
+        }
+
+        cJSON_AddItemToObject(response, "parameters", parameters = cJSON_CreateArray());
+        cJSON_AddItemToArray(parameters, paramObj = cJSON_CreateObject());
+        cJSON_AddStringToObject(paramObj, "name", WEBPA_OPERATE_PARAM_NAME);
+        if(status == WDMP_SUCCESS && encodedResult != NULL)
+        {
+                cJSON_AddStringToObject(paramObj, "message", encodedResult);
+        }
+        else
+        {
+                cJSON_AddStringToObject(paramObj, "message", "Method invocation failed");
+        }
+        cJSON_AddNumberToObject(response, "statusCode", statusCode);
+
+        *resPayload = cJSON_PrintUnformatted(response);
+        cJSON_Delete(response);
+}
 
 /**
  * @brief validate_cmc_and_cid validates cmc and cid values for TEST-AND-SET

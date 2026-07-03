@@ -19,6 +19,7 @@
 
 #include <ccsp_base_api.h>
 #include <rbus/rbus.h>
+#include <wdmp-c.h>
 #define UNUSED(x) (void )(x)
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -37,6 +38,7 @@ parameterAttributeStruct_t ** get_global_attributes();
 void clearTraceContext();
 rbusError_t getTraceContext(char* traceContext[]);
 rbusError_t setTraceContext(char* traceContext[]);
+WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **result);
 
 #endif
 

@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
+#include <string.h>
 #include <cmocka.h>
 
 #include <ccsp_base_api.h>
@@ -54,6 +55,22 @@ rbusError_t getTraceContext(char* traceContext[])
 rbusError_t setTraceContext(char* traceContext[])
 {
     UNUSED(traceContext);
+}
+
+/* Mock for the WebPA OPERATE entry point so SET-path tests can exercise the
+ * RDK.Operate routing/response logic in webpa_adapter.c without a live RBUS.
+ * The test controls the returned status via will_return(webpaRbusOperate, ...)
+ * and the base64 result string via will_return(webpaRbusOperate, ...). */
+WDMP_STATUS webpaRbusOperate(const char *encodedValue, char **result)
+{
+    UNUSED(encodedValue);
+    function_called();
+    if(result != NULL)
+    {
+        char *mockResult = (char *) mock();
+        *result = (mockResult != NULL) ? strdup(mockResult) : NULL;
+    }
+    return (WDMP_STATUS) mock();
 }
 
 void set_global_components(componentStruct_t **components)

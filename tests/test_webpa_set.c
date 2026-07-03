@@ -1107,6 +1107,98 @@ void err_setValues()
 
 	setValues(paramVal, 1, WEBPA_ATOMIC_SET_WEBCONFIG, "123456", NULL, &wdmpRet, &ret);
 }
+
+/*----------------------------------------------------------------------------*/
+/*                          OPERATE (RDK.Operate) tests                       */
+/*----------------------------------------------------------------------------*/
+
+/* A SET carrying RDK.Operate is routed to OPERATE: webpaRbusOperate is invoked
+ * and its base64 result is returned inline as the parameter "message". */
+void test_operate_routes_and_returns_result()
+{
+    /* Value is base64 of a JSON method-invocation payload; content is opaque to
+     * the router because webpaRbusOperate is mocked. */
+    char *reqPayload = "{\"parameters\":[{\"name\":\"RDK.Operate\",\"value\":\"eyJtZXRob2QiOiJEZXZpY2UuWCgpIn0=\",\"dataType\":13}],\"command\":\"SET\"}";
+    char *resPayload = NULL;
+    cJSON *response = NULL, *paramArray = NULL, *resParamObj = NULL;
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
+
+    /* Mock a successful invocation returning a base64 result string. */
+    will_return(webpaRbusOperate, "eyJyZXN1bHQiOiJvayJ9");
+    will_return(webpaRbusOperate, WDMP_SUCCESS);
+    expect_function_call(webpaRbusOperate);
+
+    processRequest(reqPayload, NULL, &resPayload, req_headers, res_headers);
+    WalInfo("resPayload : %s\n", resPayload);
+
+    assert_non_null(resPayload);
+    response = cJSON_Parse(resPayload);
+    assert_non_null(response);
+    paramArray = cJSON_GetObjectItem(response, "parameters");
+    assert_non_null(paramArray);
+    assert_int_equal(1, cJSON_GetArraySize(paramArray));
+    resParamObj = cJSON_GetArrayItem(paramArray, 0);
+    assert_string_equal("RDK.Operate", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
+    assert_string_equal("eyJyZXN1bHQiOiJvayJ9", cJSON_GetObjectItem(resParamObj, "message")->valuestring);
+    assert_int_equal(200, cJSON_GetObjectItem(response, "statusCode")->valueint);
+    cJSON_Delete(response);
+    free(resPayload);
+}
+
+/* When webpaRbusOperate reports failure (e.g. invalid base64 / missing method),
+ * the response carries a failure statusCode and no leaked result. */
+void test_operate_failure_maps_to_failure_status()
+{
+    char *reqPayload = "{\"parameters\":[{\"name\":\"RDK.Operate\",\"value\":\"bad\",\"dataType\":5}],\"command\":\"SET\"}";
+    char *resPayload = NULL;
+    cJSON *response = NULL;
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
+
+    /* Mock a failed invocation (no result string). */
+    will_return(webpaRbusOperate, NULL);
+    will_return(webpaRbusOperate, WDMP_ERR_INVALID_INPUT_PARAMETER);
+    expect_function_call(webpaRbusOperate);
+
+    processRequest(reqPayload, NULL, &resPayload, req_headers, res_headers);
+    WalInfo("resPayload : %s\n", resPayload);
+
+    assert_non_null(resPayload);
+    response = cJSON_Parse(resPayload);
+    assert_non_null(response);
+    assert_int_equal(520, cJSON_GetObjectItem(response, "statusCode")->valueint);
+    cJSON_Delete(response);
+    free(resPayload);
+}
+
+/* dataType is ignored for routing: RDK.Operate with any dataType still routes to
+ * OPERATE (here dataType 5 instead of 13). */
+void test_operate_ignores_datatype_for_routing()
+{
+    char *reqPayload = "{\"parameters\":[{\"name\":\"RDK.Operate\",\"value\":\"eyJtZXRob2QiOiJEZXZpY2UuWCgpIn0=\",\"dataType\":5}],\"command\":\"SET\"}";
+    char *resPayload = NULL;
+    cJSON *response = NULL, *paramArray = NULL, *resParamObj = NULL;
+    headers_t *res_headers = NULL;
+    headers_t *req_headers = NULL;
+
+    will_return(webpaRbusOperate, "eyJyZXN1bHQiOiJvayJ9");
+    will_return(webpaRbusOperate, WDMP_SUCCESS);
+    expect_function_call(webpaRbusOperate);
+
+    processRequest(reqPayload, NULL, &resPayload, req_headers, res_headers);
+    WalInfo("resPayload : %s\n", resPayload);
+
+    assert_non_null(resPayload);
+    response = cJSON_Parse(resPayload);
+    assert_non_null(response);
+    paramArray = cJSON_GetObjectItem(response, "parameters");
+    resParamObj = cJSON_GetArrayItem(paramArray, 0);
+    assert_string_equal("RDK.Operate", cJSON_GetObjectItem(resParamObj, "name")->valuestring);
+    assert_int_equal(200, cJSON_GetObjectItem(response, "statusCode")->valueint);
+    cJSON_Delete(response);
+    free(resPayload);
+}
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -1136,7 +1228,10 @@ int main(void)
         cmocka_unit_test(err_set_with_multiple_parameters_failure_in_rollback),
         cmocka_unit_test(err_set_with_multiple_parameters_failure_in_wifi_rollback),
 		cmocka_unit_test(test_setValues),
-		cmocka_unit_test(err_setValues)
+		cmocka_unit_test(err_setValues),
+		cmocka_unit_test(test_operate_routes_and_returns_result),
+		cmocka_unit_test(test_operate_failure_maps_to_failure_status),
+		cmocka_unit_test(test_operate_ignores_datatype_for_routing)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
