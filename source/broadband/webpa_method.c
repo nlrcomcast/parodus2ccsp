@@ -207,7 +207,7 @@ void handleMethodInvoke(set_req_t *setReq, res_struct *resObj)
                                 WalError("Failed to open /tmp/webpa_method_outParams.txt for writing outParams\n");
                         }
                 }        
-        if(rc != RBUS_ERROR_SUCCESS)
+        if(rc != RBUS_ERROR_SUCCESS )
         {
                 char detail[256] = {'\0'};
                 int code = METHOD_ERR_INTERNAL;
@@ -758,8 +758,8 @@ static int jsonObjectToRbus(cJSON *jsonObj, rbusObject_t rbusObj)
 }
 
 /**
- * @brief rbusValueToJson converts a single rbusValue into a JSON leaf
- *        { "value", "dataType" } or a nested object for RBUS_OBJECT.
+ * @brief rbusValueToJson converts a single rbusValue into a JSON scalar
+ *        or nested object for RBUS_OBJECT.
  *
  * @return newly-allocated cJSON node or NULL on failure
  */
@@ -780,56 +780,53 @@ static cJSON *rbusValueToJson(rbusValue_t val)
                 return nested;
         }
 
-        leaf = cJSON_CreateObject();
-        cJSON_AddNumberToObject(leaf, "dataType", rbusToWdmpType(rt));
-
         switch(rt)
         {
                 case RBUS_BOOLEAN:
-                        cJSON_AddBoolToObject(leaf, "value", rbusValue_GetBoolean(val));
+                        leaf = cJSON_CreateBool(rbusValue_GetBoolean(val));
                         break;
                 case RBUS_INT8:
-                        cJSON_AddNumberToObject(leaf, "value", rbusValue_GetInt8(val));
+                        leaf = cJSON_CreateNumber(rbusValue_GetInt8(val));
                         break;
                 case RBUS_UINT8:
-                        cJSON_AddNumberToObject(leaf, "value", rbusValue_GetUInt8(val));
+                        leaf = cJSON_CreateNumber(rbusValue_GetUInt8(val));
                         break;
                 case RBUS_INT16:
-                        cJSON_AddNumberToObject(leaf, "value", rbusValue_GetInt16(val));
+                        leaf = cJSON_CreateNumber(rbusValue_GetInt16(val));
                         break;
                 case RBUS_UINT16:
-                        cJSON_AddNumberToObject(leaf, "value", rbusValue_GetUInt16(val));
+                        leaf = cJSON_CreateNumber(rbusValue_GetUInt16(val));
                         break;
                 case RBUS_INT32:
-                        cJSON_AddNumberToObject(leaf, "value", rbusValue_GetInt32(val));
+                        leaf = cJSON_CreateNumber(rbusValue_GetInt32(val));
                         break;
                 case RBUS_UINT32:
-                        cJSON_AddNumberToObject(leaf, "value", (double) rbusValue_GetUInt32(val));
+                        leaf = cJSON_CreateNumber((double) rbusValue_GetUInt32(val));
                         break;
                 case RBUS_INT64:
-                        cJSON_AddNumberToObject(leaf, "value", (double) rbusValue_GetInt64(val));
+                        leaf = cJSON_CreateNumber((double) rbusValue_GetInt64(val));
                         break;
                 case RBUS_UINT64:
-                        cJSON_AddNumberToObject(leaf, "value", (double) rbusValue_GetUInt64(val));
+                        leaf = cJSON_CreateNumber((double) rbusValue_GetUInt64(val));
                         break;
                 case RBUS_SINGLE:
-                        cJSON_AddNumberToObject(leaf, "value", rbusValue_GetSingle(val));
+                        leaf = cJSON_CreateNumber(rbusValue_GetSingle(val));
                         break;
                 case RBUS_DOUBLE:
-                        cJSON_AddNumberToObject(leaf, "value", rbusValue_GetDouble(val));
+                        leaf = cJSON_CreateNumber(rbusValue_GetDouble(val));
                         break;
                 case RBUS_STRING:
                 {
                         int len = 0;
                         const char *s = rbusValue_GetString(val, &len);
-                        cJSON_AddStringToObject(leaf, "value", s != NULL ? s : "");
+                        leaf = cJSON_CreateString(s != NULL ? s : "");
                         break;
                 }
                 default:
                 {
                         char buf[512] = {'\0'};
                         rbusValue_ToString(val, buf, sizeof(buf));
-                        cJSON_AddStringToObject(leaf, "value", buf);
+                        leaf = cJSON_CreateString(buf);
                         break;
                 }
         }
@@ -845,7 +842,6 @@ static int rbusObjectToJson(rbusObject_t obj, cJSON *jsonOut)
 {
         int i = 0;
         rbusValue_t value = NULL;
-        rbusValueType_t type = RBUS_NONE;
         char *str_value = NULL;
         if(obj == NULL || jsonOut == NULL)
         {
@@ -885,22 +881,31 @@ static int rbusObjectToJson(rbusObject_t obj, cJSON *jsonOut)
                 value = rbusProperty_GetValue(prop);
                 if(value)
                 {
-                        type = rbusValue_GetType(value);
                         str_value = rbusValue_ToString(value,NULL,0);
 
                         if(str_value)
                         {
+                                const char *name = rbusProperty_GetName(prop);
+                                cJSON *leaf = NULL;
+
                                 WalInfo ("Parameter %2d:\r\n", ++i);
-                                WalInfo ("              Name  : %s\r\n", rbusProperty_GetName(prop));
-                                //WalInfo ("              Type  : %s\r\n", getDataType_toString(type));
+                                WalInfo ("              Name  : %s\r\n", name != NULL ? name : "<null>");
                                 WalInfo ("              Value : %s\r\n", str_value);
-                                cJSON *leaf = rbusValueToJson(value);
-                                if(leaf == NULL)
+
+                                if(name == NULL)
                                 {
-                                        WalError("rbusObjectToJson: failed converting property '%s'\n", rbusProperty_GetName(prop));
+                                        free(str_value);
                                         return -1;
                                 }
-                                cJSON_AddStringToObject(jsonOut, rbusProperty_GetName(prop), leaf);
+
+                                leaf = rbusValueToJson(value);
+                                if(leaf == NULL)
+                                {
+                                        WalError("rbusObjectToJson: failed converting property '%s'\n", name);
+                                        free(str_value);
+                                        return -1;
+                                }
+                                cJSON_AddItemToObject(jsonOut, name, leaf);
                                 free(str_value);
                         }
                 }
