@@ -7,6 +7,7 @@
 #include "webpa_rbus.h"
 
 static rbusHandle_t rbus_handle;
+static rbusHandle_t rbus_method_handle;
 static bool isRbus = false;
 
 bool isRbusEnabled()
@@ -31,6 +32,7 @@ bool isRbusInitialized()
 WDMP_STATUS webpaRbusInit(const char *pComponentName)
 {
         int ret = RBUS_ERROR_SUCCESS;
+        char methodComponentName[RBUS_MAX_NAME_LENGTH] = {0};
 
         WalInfo("rbus_open for component %s\n", pComponentName);
         ret = rbus_open(&rbus_handle, pComponentName);
@@ -39,13 +41,42 @@ WDMP_STATUS webpaRbusInit(const char *pComponentName)
                 WalError("webpaRbusInit failed with error code %d\n", ret);
                 return WDMP_FAILURE;
         }
+
+        ret = snprintf(methodComponentName, sizeof(methodComponentName), "%s.method", pComponentName);
+        if(ret < 0 || ret >= (int)sizeof(methodComponentName))
+        {
+                WalError("Failed to build RBUS method component name for %s\n", pComponentName);
+                rbus_close(rbus_handle);
+                rbus_handle = NULL;
+                return WDMP_FAILURE;
+        }
+
+        WalInfo("rbus_open for method invoke component %s\n", methodComponentName);
+        ret = rbus_open(&rbus_method_handle, methodComponentName);
+        if(ret != RBUS_ERROR_SUCCESS)
+        {
+                WalError("webpaRbusInit method handle open failed with error code %d\n", ret);
+                rbus_close(rbus_handle);
+                rbus_handle = NULL;
+                return WDMP_FAILURE;
+        }
+
         WalInfo("webpaRbusInit is success. ret is %d\n", ret);
         return WDMP_SUCCESS;
 }
 
 void webpaRbus_Uninit()
 {
-    rbus_close(rbus_handle);
+    if(rbus_method_handle)
+    {
+        rbus_close(rbus_method_handle);
+        rbus_method_handle = NULL;
+    }
+    if(rbus_handle)
+    {
+        rbus_close(rbus_handle);
+        rbus_handle = NULL;
+    }
 }
 
 rbusError_t setTraceContext(char* traceContext[])
@@ -132,9 +163,9 @@ rbusError_t clearTraceContext()
 
 rbusError_t webpaRbusMethodInvoke(const char *methodName, rbusObject_t inParams, rbusObject_t *outParams)
 {
-        if(!isRbusInitialized())
+        if(rbus_method_handle == NULL)
         {
-                WalError("Rbus not initialized in webpaRbusMethodInvoke function\n");
+                WalError("Method RBUS handle not initialized in webpaRbusMethodInvoke function\n");
                 return RBUS_ERROR_NOT_INITIALIZED;
         }
         if(methodName == NULL || outParams == NULL)
@@ -143,7 +174,7 @@ rbusError_t webpaRbusMethodInvoke(const char *methodName, rbusObject_t inParams,
                 return RBUS_ERROR_INVALID_INPUT;
         }
         WalInfo("Invoking RBUS method %s synchronously\n", methodName);
-        return rbusMethod_Invoke(rbus_handle, methodName, inParams, outParams);
+        return rbusMethod_Invoke(rbus_method_handle, methodName, inParams, outParams);
 }
 
 rbusHandle_t get_rbus_handle(void)

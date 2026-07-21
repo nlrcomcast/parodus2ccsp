@@ -21,10 +21,4 @@ rbusError_t getTraceContext(char* traceContext[]);
 rbusError_t clearTraceContext();
 
 rbusError_t webpaRbusMethodInvoke(const char *methodName, rbusObject_t inParams, rbusObject_t *outParams);
-/**
- * @brief Gets the rbus_handle for lmLite.
- *
- * @return rbusHandle_t value
- */
-rbusHandle_t get_rbus_handle(void);
 #endif
