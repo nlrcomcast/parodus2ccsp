@@ -173,7 +173,7 @@ rbusError_t webpaRbusMethodInvoke(const char *methodName, rbusObject_t inParams,
                 WalError("Invalid arguments to webpaRbusMethodInvoke\n");
                 return RBUS_ERROR_INVALID_INPUT;
         }
-        WalInfo("Invoking RBUS method %s synchronously\n", methodName);
+        WalInfo("RBUS method invoke to %s synchronously\n", methodName);
         return rbusMethod_Invoke(rbus_method_handle, methodName, inParams, outParams);
 }
 

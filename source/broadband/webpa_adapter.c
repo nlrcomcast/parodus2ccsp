@@ -266,7 +266,7 @@ void processRequest(char *reqPayload,char *transactionId, char **resPayload, hea
                                  * dedicated method-invocation handler. */
                                 if(reqObj->reqType == SET && isMethodInvokeRequest(reqObj->u.setReq))
                                 {
-                                        WalInfo("Detected RDK.Operate method invocation request\n");
+                                        WalInfo("Received RDK.Operate method request\n");
                                         handleMethodInvoke(reqObj->u.setReq, resObj);
                                 }
                                 else

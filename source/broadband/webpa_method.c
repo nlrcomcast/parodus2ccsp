@@ -79,7 +79,7 @@ void handleMethodInvoke(set_req_t *setReq, res_struct *resObj)
         rbusError_t rc = RBUS_ERROR_SUCCESS;
         param_t *p = NULL;
 
-        WalInfo("************** handleMethodInvoke *****************\n");
+        WalPrint("************** handleMethodInvoke *****************\n");
 
         /* A method request carries exactly one RDK.Operate parameter. */
         if(setReq == NULL || setReq->paramCnt != 1 || setReq->param == NULL)
@@ -115,7 +115,7 @@ void handleMethodInvoke(set_req_t *setReq, res_struct *resObj)
                         "Failed to Base64-decode operate payload");
                 goto respond;
         }
-        WalPrint("Decoded operate payload (%zu bytes): %s\n", decodedLen, decoded);
+        WalInfo("Base64-decoded operate payload (%zu bytes): %s\n", decodedLen, decoded);
 
         /* Parse the decoded operate payload JSON. */
         operateJson = cJSON_Parse(decoded);
@@ -138,7 +138,7 @@ void handleMethodInvoke(set_req_t *setReq, res_struct *resObj)
                 goto respond;
         }
         responseName = methodItem->valuestring;
-        WalInfo("Method invocation target: %s\n", responseName);
+        WalPrint("Method invocation target: %s\n", responseName);
 
         /* Convert the optional params object into an RBUS input object. */
         rbusObject_Init(&inParams, NULL);
@@ -183,7 +183,7 @@ void handleMethodInvoke(set_req_t *setReq, res_struct *resObj)
         rc = webpaRbusMethodInvoke(responseName, inParams, &outParams);
         dumpRbusObjectWithTimestamp("/tmp/webpa_method_inParams.txt", "inParams", responseName, inParams);
         dumpRbusObjectWithTimestamp("/tmp/webpa_method_outParams.txt", "outParams", responseName, outParams);
-        if((rc != RBUS_ERROR_SUCCESS) )
+        if((rc != RBUS_ERROR_SUCCESS))
         {
                 int code = mapRbusErrorToMethodError(rc);                
                 if(outParams == NULL)
@@ -232,30 +232,21 @@ void handleMethodInvoke(set_req_t *setReq, res_struct *resObj)
         }
         else
         {
-                WalInfo("Method %s returned no RBUS output parameters\n", responseName);
+                WalInfo("method outParams is empty\n");
         }
 
-        /* If outParams has no properties, add success instead of "{}". */
-        if(resultObj != NULL && resultObj->child == NULL)
-        {
-                WalInfo("rbus method response success; no outParams data received\n");
-                resultStr = strdup("{\"result\":\"success\"}");
-        }
-        else
-        {
-                cJSON *resultWrapper = cJSON_CreateObject();
-                if(resultWrapper == NULL)
-                {
-                        WalError("Failed to allocate result wrapper JSON object\n");
-                        errorObj = buildErrorObject(METHOD_ERR_INTERNAL,
-                                "Failed to serialize method result JSON");
-                        goto respond;
-                }
 
-                cJSON_AddItemToObject(resultWrapper, "result", resultObj);
-                resultObj = resultWrapper;
-                resultStr = cJSON_PrintUnformatted(resultObj);
+        cJSON *resultWrapper = cJSON_CreateObject();
+        if(resultWrapper == NULL)
+        {
+                WalError("Failed to allocate result wrapper JSON object\n");
+                errorObj = buildErrorObject(METHOD_ERR_INTERNAL,"Failed to serialize method result JSON");
+                goto respond;
         }
+        cJSON_AddItemToObject(resultWrapper, "result", resultObj);
+        resultObj = resultWrapper;
+        resultStr = cJSON_PrintUnformatted(resultObj);
+
         if(resultStr == NULL)
         {
                 WalError("Failed to serialize method result JSON\n");
@@ -263,9 +254,10 @@ void handleMethodInvoke(set_req_t *setReq, res_struct *resObj)
                         "Failed to serialize method result JSON");
                 goto respond;
         }
+        WalInfo("Method response received: %s\n", resultStr);
 
         methodStatus = WDMP_SUCCESS;
-        WalInfo("Method %s invoked successfully\n", responseName);
+        WalPrint("Method %s invoked successfully\n", responseName);
 
 respond:
         if(resObj != NULL)
@@ -313,7 +305,7 @@ respond:
                         resObj->u.paramRes->params[0].name = strdup(responseName);
                         if(errorObj != NULL)
                         {
-                                WalInfo("Encoding method error payload for %s: %s\n", responseName, errorObj);
+                                WalPrint("Encoding method error payload for %s: %s\n", responseName, errorObj);
                                 b64message = base64Encode(errorObj);
                                 if(b64message != NULL)
                                 {
@@ -331,10 +323,11 @@ respond:
                         }
                         else if(resultStr != NULL)
                         {
-                                WalInfo("Encoding method result payload for %s: %s\n", responseName, resultStr);
+                                WalPrint("Encoding method result payload for %s: %s\n", responseName, resultStr);
                                 b64message = base64Encode(resultStr);
                                 if(b64message != NULL)
                                 {
+                                        WalInfo("Method response base64 encode is successful\n");
                                         resObj->u.paramRes->params[0].value = strdup(b64message);
                                         free(b64message);
                                         b64message = NULL;
@@ -389,7 +382,7 @@ respond:
         {
                 rbusObject_Release(outParams);
         }
-        WalInfo("************** handleMethodInvoke *****************\n");
+        WalPrint("************** handleMethodInvoke *****************\n");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -887,7 +880,7 @@ static int rbusObjectToJson(rbusObject_t obj, cJSON *jsonOut)
                 return -1;
         }
 
-        WalInfo("rbusObjectToJson: start converting RBUS object to JSON\n");
+        WalPrint("rbusObjectToJson: start converting RBUS object to JSON\n");
         rbusProperty_t prop = rbusObject_GetProperties(obj);
 
         if(prop == NULL)
@@ -902,7 +895,7 @@ static int rbusObjectToJson(rbusObject_t obj, cJSON *jsonOut)
 
                 if(name != NULL && val != NULL)
                 {
-                        WalInfo("rbusObjectToJson: converting property '%s'\n", name);
+                        WalPrint("rbusObjectToJson: converting property '%s'\n", name);
                         cJSON *leaf = rbusValueToJson(val);
                         if(leaf == NULL)
                         {
@@ -913,12 +906,12 @@ static int rbusObjectToJson(rbusObject_t obj, cJSON *jsonOut)
                 }
                 else
                 {
-                        WalInfo("rbusObjectToJson: skipping property with missing name/value (name=%s, value=%p)\n",
+                        WalError("rbusObjectToJson: skipping property with missing name/value (name=%s, value=%p)\n",
                                 name != NULL ? name : "<null>", val);
                 }                             
                 prop = rbusProperty_GetNext(prop);
         }
-        WalInfo("rbusObjectToJson: conversion completed successfully\n");
+        WalPrint("rbusObjectToJson: conversion completed successfully\n");
         return 0;
 }
 
@@ -959,10 +952,10 @@ static void dumpRbusObjectWithTimestamp(const char *path, const char *label,
 
         if(timestamp[0] != '\0')
         {
-                WalInfo("Dumped method %s to %s at %s\n", label, path, timestamp);
+                WalPrint("Dumped method %s to %s at %s\n", label, path, timestamp);
         }
         else
         {
-                WalInfo("Dumped method %s to %s\n", label, path);
+                WalPrint("Dumped method %s to %s\n", label, path);
         }
 }
